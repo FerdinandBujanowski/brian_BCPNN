@@ -1,7 +1,10 @@
 from brian2 import *
-from hebbian.tully_2014.parameters import *
+import sys
+sys.path.append("./")
+
 import numpy as np
 import matplotlib.pyplot as plt
+from brian_bcpnn.models.tully_2014.parameters import *
 
 print(epsilon)
 
@@ -13,4 +16,4 @@ def get_momentary_change(V, dt=sim_dt):
 plt.plot(V_space/mV, get_momentary_change(V_space))
 plt.xlabel('V (mV)')
 plt.ylabel('dV/dt (mV/ms)')
-plt.show()
+# plt.show()

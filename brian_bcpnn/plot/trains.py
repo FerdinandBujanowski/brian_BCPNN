@@ -2,8 +2,6 @@ from brian2 import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-
 def get_full_train(ax, spikemon, N, x_label=None):
     ax.scatter(spikemon.t/ms, spikemon.i[:], marker='_', color='k', s=10)
     ax.set_xlim(0, len(spikemon.t/ms))
