@@ -2,9 +2,9 @@ from brian2 import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-def get_full_train(ax, spikemon, N, x_label=None):
+def get_full_train(ax, spikemon, N, t_total, x_label=None):
     ax.scatter(spikemon.t/ms, spikemon.i[:], marker='_', color='k', s=10)
-    ax.set_xlim(0, len(spikemon.t/ms))
+    ax.set_xlim(0, t_total/ms)
     ax.set_ylim(0, N)
     ax.set_ylabel('# neuron')
     ax.set_yticks(np.arange(0, N, 100))

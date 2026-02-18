@@ -22,7 +22,7 @@ def plot_e_traces(ax, statemon, synmon, syn, i, j, x_label=None, c_i='r', c_j='b
     return ax
 
 def plot_p_traces(ax, statemon, synmon, syn, i, j, x_label=None, c_i='r', c_j='b', c_ij='k'):
-    ax.plot(statemon.t/ms, synmon[syn[i, j]].P_i[0], c=c_i, label='presynaptic')
+    ax.plot(statemon.t/ms, synmon[syn[i,j]].P_i[0], c=c_i, label='presynaptic')
     ax.plot(statemon.t/ms, statemon.P_j[j], c=c_j, label='postsynaptic')
     ax.plot(statemon.t/ms, synmon[syn[i,j]].P_syn[0], c=c_ij, label='synaptic')
     ax.set_ylabel('P-traces')
