@@ -6,11 +6,14 @@ g_L = 16.67 * nS # leak conductance
 E_L = -70 * mV # leak reversal potential
 E_ex = 0 * mV # excitatory reversal potential
 E_inh = -75 * mV # inhibiory reversal potential
-phi = 50 * pA #50 * pA # current scaling factor
+phi = 0 * pA #50 * pA # current scaling factor
 V_th = -55 * mV # membrane voltage threshold
 V_res = -60 * mV # membrane reset potential
 t_ref = 2 * ms # refractory period
 sim_dt = 0.1 * ms # time resolution
+
+min_num = 10e-10 # minimum float value
+dI = -0.3 * nA # external current
 
 # CHANNEL MODEL
 tau_z = 10 * ms # Z trace time constant

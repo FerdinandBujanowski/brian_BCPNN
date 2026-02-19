@@ -56,7 +56,7 @@ g_ex_post = b_ex * w_g * alpha_ex : siemens (summed)
 
 dS_inh/dt = -S_inh/tau_inh : 1 (clock-driven) # inhibitory conducting window
 dalpha_inh/dt = (S_inh-alpha_inh)/tau_inh : 1 (clock-driven)
-g_inh_post = (1-b_ex) * w_g * S_inh : siemens (summed)
+g_inh_post = (1-b_ex) * w_g * alpha_inh : siemens (summed)
 
 # PRESYNAPTIC (i) TRACES
 dS_i/dt = -S_i/sim_dt : 1 (clock-driven)

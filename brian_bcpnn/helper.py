@@ -1,7 +1,7 @@
 from brian2 import StateMonitor
 
 bcpnn_layer_variables = ['V', 'S_j', 'Z_j', 'E_j', 'P_j', 'beta', 'g_ex', 'g_inh', 'I_beta', 'I_on']
-bcpnn_synapse_variables = ['w', 'Z_i', 'E_i', 'P_i', 'E_syn', 'P_syn']
+bcpnn_synapse_variables = ['w', 'Z_i', 'E_i', 'P_i', 'E_syn', 'P_syn', 'S_ex', 'w_g']
 
 def get_inh_synapses(n_hyper, n_mini):
 
@@ -23,3 +23,6 @@ def get_BCPNN_statemon(neurons, record):
 
 def get_BCPNN_synmon(synapse, record):
     return StateMonitor(synapse, bcpnn_synapse_variables, record=record)
+
+def get_BCPNN_weight_synmon(synapse, record):
+    return StateMonitor(synapse, ['w'], record=record)
