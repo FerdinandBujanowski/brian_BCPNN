@@ -27,26 +27,31 @@ model = RecurrentLIF(N_hyper=N_hyper, N_mini=N_mini, complex_synmon=True)
 w_saved = None
 with open('data/last_batch.data', 'rb') as f:
     data = pickle.load(f)
-    w_saved = data['w']
+    w_saved = data
 
-model.S_REC.w = w_saved[-1]
-print(model.S_REC.w)
+model.S_REC.w = w_saved
+# print(model.S_REC.w)
 
 model.REC.b_on[0] = 1
 
 t_total = 1000 * ms
 model.net.run(t_total)
 
-# print(trains.get_neuron_frequency(model.spikemon, 0, t_stop=t_total))
-
 fig, ax = plt.subplots()
 trains.get_full_train(ax, model.spikemon, model.N_total, t_total)
-
 plt.show()
+
+freqs = []
+for n_neuron in range(N_hyper*N_mini):
+    freq = trains.get_neuron_frequency(model.spikemon, n_neuron, t_stop=t_total) / Hz
+    freqs.append(freq)
+plt.hist(freqs)
+plt.show()
+
 
 plt.plot(model.rec_statemon.t/ms, model.rec_statemon.V[8]/mV)
 # plt.plot(model.rec_statemon.t/ms, model.rec_statemon.g_ex[8]/nS)
-# plt.plot(model.rec_statemon.t/ms, model.bcpnn_synmon[model.S_REC[0,8]].w_g[0]/nS, label='w_g')
+# plt.plot(model.rec_statemon.t/ms, model.bcpnn_synmon[model.S_REC[0,8]].w[0], label='w')
 plt.legend()
 plt.show()
 

@@ -8,7 +8,7 @@ import pickle
 import sys
 sys.path.append("./")
 
-from brian_bcpnn.models.tully_2014.parameters import * # change this to my own param file asp
+from brian_bcpnn.models.bujanowski_2026.parameters import SIM_PARAM_INIT
 import brian_bcpnn.helper as hlp
 from brian_bcpnn.plot import trains, traces, synapses
 
@@ -19,19 +19,19 @@ N_hyper = 8
 N_mini = 8
 # N_total = N_hyper * N_mini
 
-defaultclock.dt = sim_dt
+defaultclock.dt = SIM_PARAM_INIT['sim_dt']
 
 model = RecurrentLIF(N_hyper=N_hyper, N_mini=N_mini)
 
 # VISUALIZE LAT INH SYNAPSES
-fig, ax = plt.subplots()
-im = synapses.plot_connectivity(ax, model.S_LAT, model.N_total)
-fig.colorbar(im, ax=ax)
-plt.show()
+# fig, ax = plt.subplots()
+# im = synapses.plot_connectivity(ax, model.S_LAT, model.N_total)
+# fig.colorbar(im, ax=ax)
+# plt.show()
 
 t_sample = 150 * ms
-n_samples = 8
-n_batches = 4
+n_samples = 8 
+n_batches = 1
 t_batch = n_samples * t_sample
 tfinal = n_batches * t_batch
 
@@ -41,7 +41,7 @@ for i_batch in range(n_batches):
         model.net.run(t_sample)
 
     # flush synmon
-    data = model.bcpnn_synmon.get_states(['w'])
+    data = model.bcpnn_synmon.get_states(['w'])['w'][-1]
     with open('data/last_batch.data', 'wb') as f:
         pickle.dump(data, f)
     if i_batch < (n_batches - 1):

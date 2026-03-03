@@ -14,10 +14,10 @@ N_total = 3
 
 min_num = 10e-6
 
-dI = -0.5 * nA
+dI = -0.4 * nA
 stimulation_protocol = TimedArray(np.transpose([
-    [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
     [1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]), dt=100*ms)
 

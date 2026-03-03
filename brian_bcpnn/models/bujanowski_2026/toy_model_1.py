@@ -33,12 +33,13 @@ class RecurrentLIF():
         # on-switch
         b_on : 1 # no stimulation protocol here
         I_on = b_on * dI : amp
+        dI_noise/dt = 0 * nA / ms : amp #= -0.01*nA*sqrt(2/ms)*xi : amp
 
         # total voltage
         g_ex : siemens # summed over all excitatory synapses
         g_inh : siemens # summed over all inhibitory synapses
         g_lat_inh : siemens # summed over all LATERAL inhibitory synapses
-        dV/dt = (g_L*(V-E_L)+g_ex*(V-E_ex)+(g_inh+g_lat_inh)*(V-E_inh)+I_beta+I_on)/-C_m : volt (unless refractory)
+        dV/dt = (g_L*(V-E_L)+g_ex*(V-E_ex)+(g_inh+g_lat_inh)*(V-E_inh)+I_beta+I_on+I_noise)/-C_m : volt (unless refractory)
         '''
 
         self.REC = NeuronGroup(self.N_total, model=eqs_rec, method='euler', threshold='V>=V_th', reset='V=V_res', refractory='t_ref')
@@ -57,8 +58,8 @@ class RecurrentLIF():
 
         dS_ex/dt = -S_ex/tau_ex : 1 (clock-driven) # excitatory conducting window
         # simplification to the Tully model: no alpha shaped conductance
-        dalpha_ex/dt = (S_ex-alpha_ex)/tau_ex : 1  (clock-driven)
-        g_ex_post = b_ex * w_g * alpha_ex : siemens (summed)
+        # dalpha_ex/dt = (S_ex-alpha_ex)/tau_ex : 1  (clock-driven)
+        g_ex_post = b_ex * w_g * S_ex : siemens (summed)
 
         dS_inh/dt = -S_inh/tau_inh : 1 (clock-driven) # inhibitory conducting window
         g_inh_post = (1-b_ex) * w_g * S_inh : siemens (summed)
@@ -72,12 +73,13 @@ class RecurrentLIF():
         # BCPNN synapse
         dE_syn/dt = (Z_i*Z_j_post - E_syn)/tau_e : 1 (clock-driven)
         dP_syn/dt = (K*(E_syn-P_syn))/tau_p : 1 (clock-driven)
-        w : 1 #= log(clip(P_syn, min_num, inf)/clip(P_i*P_j_post, min_num, inf)) : 1 (constant over dt)
+        w : 1 
+        # w = log(clip(P_syn, min_num, inf)/clip(P_i*P_j_post, min_num, inf)) : 1 (constant over dt)
         '''
 
         rec_syn_on_pre = '''
         S_i = 1
-        S_ex = 1
+        S_ex = +1
         S_inh = 1
         '''
         rec_syn_on_post = '''

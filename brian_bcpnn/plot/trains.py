@@ -44,3 +44,6 @@ def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b'):
 
 def get_neuron_frequency(spikemon, neuron, t_stop, t_start=0*ms):
     return len(spikemon.spike_trains()[neuron]) / (t_stop - t_start)
+
+def get_event_frequency(eventmon, neuron, t_stop, t_start=0*ms):
+    return len(eventmon.event_trains()[neuron]) / (t_stop - t_start)

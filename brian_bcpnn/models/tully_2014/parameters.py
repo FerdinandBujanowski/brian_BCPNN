@@ -18,7 +18,7 @@ dI = -0.3 * nA # external current
 # CHANNEL MODEL
 tau_z = 10 * ms # Z trace time constant
 tau_e = 100 * ms # E trace time constant
-tau_p = 10000 * ms # P trace time constant
+tau_p = 1000 * ms # P trace time constant
 f_max = 20 * Hz # highest firing rate
 epsilon = 1/(f_max*tau_p) * Hz # lowest firing rate
 t_spike = sim_dt # spike duration
