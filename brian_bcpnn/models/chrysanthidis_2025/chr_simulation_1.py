@@ -2,41 +2,61 @@ from brian2 import *
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pickle
-from chr_model import *
 from chr_params import chr_namespace
 import sys
 sys.path.append("./")
+from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.plot import trains, synapses, traces
 
-# prefs.codegen.target = 'numpy'
-# prefs.codegen.loop_invariant_optimisations = False
-# # np.seterr(all='raise')
+prefs.codegen.target = 'numpy'
+prefs.codegen.loop_invariant_optimisations = False
+# np.seterr(all='raise')
 
 defaultclock.dt = chr_namespace['t_sim']
 
-REC.b_cond = [1, 1]
-REC.b_cur = [0, 0]
+N_hyper = 1
+N_mini = 2
+model = ChrysanthidisNetwork(N_hyper, N_mini)
+
+# MONITORS
+spikemon = SpikeMonitor(model.REC)
+rec_statemon = StateMonitor(
+    model.REC, ['V_m', 'Z_j', 'E_j', 'P_j', 'I_w', 'g_AMPA', 'I_AMPA', 'g_NMDA', 'I_NMDA', 'g_GABA', 'I_GABA', 'I_stim', 'beta', 'I_beta', 'g_stim'],
+    record=True
+    )
+for mon in [spikemon, rec_statemon]:
+    model.add_monitor(mon, mon.name)
+
+bcpnn_synmon = StateMonitor(
+    model.S_REC, ['Z_i', 'E_i', 'P_i', 'E_syn', 'P_syn', 'w', 'b_glut', 'clip_p_ratio'],
+    record=True
+)
+model.add_monitor(bcpnn_synmon, bcpnn_synmon.name)
+
+# model.activate_pattern([[0, 0]])
 t_total = 1000*ms
-network.run(t_total, namespace=chr_namespace)
+model.run(t_total, namespace=chr_namespace)
 
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, sharex=True,
                                      gridspec_kw={'height_ratios': (1, 3, 3, 3)})
 
 trains.compare_two_trains(ax1, spikemon, 0, 1)
 
-traces.plot_z_traces(ax2, rec_statemon, bcpnn_synmon, S_REC, 0, 1)
+traces.plot_z_traces(ax2, rec_statemon, bcpnn_synmon, model.S_REC, 0, 1)
 
-traces.plot_e_traces(ax3, rec_statemon, bcpnn_synmon, S_REC, 0, 1)
+traces.plot_e_traces(ax3, rec_statemon, bcpnn_synmon, model.S_REC, 0, 1)
 
-traces.plot_p_traces(ax4, rec_statemon, bcpnn_synmon, S_REC, 0, 1)
+traces.plot_p_traces(ax4, rec_statemon, bcpnn_synmon, model.S_REC, 0, 1)
 
 ax4.set_xticks(np.arange(0, t_total / ms, 100))
 ax4.set_xlabel("Time (ms)")
 plt.show()
 
 # plt.plot(rec_statemon.t/ms, rec_statemon.g_stim[0]/nS, label='g_stim')
-plt.plot(rec_statemon.t/ms, rec_statemon.V_m[0]/mV, label='n0 voltage')
-plt.plot(rec_statemon.t/ms, rec_statemon.V_m[1]/mV, label='n1 voltage')
+# plt.plot(rec_statemon.t/ms, rec_statemon.V_m[0]/mV, label='n0 voltage')
+# plt.plot(rec_statemon.t/ms, rec_statemon.V_m[1]/mV, label='n1 voltage')
+plt.plot(rec_statemon.t/ms, rec_statemon.beta[0], label='n0 beta')
+plt.plot(rec_statemon.t/ms, rec_statemon.beta[1], label='n1 beta')
 # plt.plot(rec_statemon.t/ms, rec_statemon.I_AMPA[1]/nA, label='I_AMPA')
 # plt.plot(rec_statemon.t/ms, rec_statemon.I_NMDA[1]/nA, label='I_NMDA')
 # plt.plot(rec_statemon.t/ms, rec_statemon.I_GABA[1]/nA, label='I_GABA')

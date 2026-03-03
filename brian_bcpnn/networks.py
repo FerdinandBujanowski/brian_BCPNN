@@ -5,11 +5,13 @@ import brian_bcpnn.models.chrysanthidis_2025.chr_model as eqs
 
 class CorticalNetwork():
 
-    def __init__(self, N_hyper, N_mini, N_basket=0, namespace=None):
+    def __init__(self, N_hyper, N_mini, N_pyr=1, N_basket=0, namespace=None):
 
         self.N_hyper = N_hyper
         self.N_mini = N_mini
-        self.N = N_hyper * N_mini
+        self.N_pyr = N_pyr
+        self.N = N_hyper * N_mini * N_pyr
+
         self.N_basket = N_basket
         self.monitors = dict()
         self.inputs = dict()
@@ -48,8 +50,8 @@ class CorticalNetwork():
 
 class ChrysanthidisNetwork(CorticalNetwork):
 
-    def __init__(self, N_hyper, N_mini, N_basket=0):
-        super().__init__(N_hyper, N_mini, N_basket, namespace=chr_namespace)
+    def __init__(self, N_hyper, N_mini, N_basket=0, namespace=chr_namespace):
+        super().__init__(N_hyper, N_mini, N_basket, namespace)
     
         # RECURRENT HYPER-MINI-COLUMN LAYER
         self.REC = NeuronGroup(
@@ -69,16 +71,27 @@ class ChrysanthidisNetwork(CorticalNetwork):
         self.S_REC.P_i = self.namespace['eps']
         self.S_REC.P_syn = self.namespace['eps']
 
+        # S_INH.connect(i=source_inh, j=target_inh)
+
         # POISSON INPUT
         noise_pos_input = PoissonInput(target=self.REC, target_var='g_bg', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg'])
         self.add_poisson(noise_pos_input, 'pos_noise')
         noise_neg_input = PoissonInput(target=self.REC, target_var='g_bg', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg_n'])
         self.add_poisson(noise_neg_input, 'neg_noise')
-        stim_input = PoissonInput(target=self.REC, target_var='g_stim', N=10, rate=self.namespace['r_stim'], weight=self.namespace['gr_stim'])
+        stim_input = PoissonInput(target=self.REC, target_var='g_stim', N=5, rate=self.namespace['r_stim'], weight=self.namespace['gr_stim'])
         self.add_poisson(stim_input, 'stim_input')
 
         # MONITORS
         # ... to be added in file instantiating class
+
+    def turn_off_all(self):
+        self.REC.b_on[:] = 0
+    
+    def activate_pattern(self, pattern, turn_off_before=True):
+        if turn_off_before:
+            self.turn_off_all()
+        for [hy, mi] in pattern:
+            self.REC.b_on[hy*int(self.N/self.N_hyper)+mi] = 1 
 
 class EquationSystem():
     def __init__(self, equation_string):

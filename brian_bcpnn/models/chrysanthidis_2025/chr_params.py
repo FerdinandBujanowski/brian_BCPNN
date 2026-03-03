@@ -4,7 +4,6 @@ chr_namespace = {
 # SIMULATION PARAMETERS
 't_sim': 0.1 * ms,
 'min_num': 10e-10,
-'dI': 1 * nA,
 
 # NEURON MODEL PARAMETERS
 'b': 86 * pA, # Adaptation current
@@ -48,7 +47,10 @@ chr_namespace = {
 'tau_D': 280 * ms, # Depression decay time constant
 
 # CONNECTIVITY
-# ...
+'cp_PP': 0.2, # pyr-pyr recurrent connection probability
+'cp_PPL': 0.2, # pyr-pyr long-range connection probability
+'cp_PB': 0.7, # pyr-basket connection probability
+'cp_BP': 0.7, # basket-pyr connection probability
 'g_PB': 3 * nS, # pyramidal-basket connection conductance
 'g_BP': -7 * nS, # basket-pyramidal connection conductance
 
@@ -56,12 +58,12 @@ chr_namespace = {
 'r_bg': 470 * Hz, # Background noise
 'gr_bg': 1.5 * nS, # Background conductance (+)
 'gr_bg_n': -1.5 * nS, # Background conductance (-)
-'tau_bg': 5 * ms,
+# 'tau_bg': 5 * ms,
 'V_bg': 10 * mV, # background voltage change
 't_stim': 250 * ms, # Stimulation duration
 'r_stim': 340 * Hz, # Stimulation rate
 'gr_stim': 1.5 * nS, # Stimulation conductance
-'tau_stim': 5 * ms,
+# 'tau_stim': 5 * ms,
 'V_stim': 20 * mV,
 'T_stim': 200 * ms # Interstimulus interval
 }
