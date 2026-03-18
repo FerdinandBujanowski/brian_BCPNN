@@ -12,7 +12,7 @@ import sys
 sys.path.append("./")
 
 from brian_bcpnn.models.bujanowski_2026.parameters import SIM_PARAM_INIT
-import brian_bcpnn.helper as hlp
+import brian_bcpnn.utils.synapse_utils as hlp
 from brian_bcpnn.plot import trains, traces, synapses
 
 from toy_model_1 import RecurrentLIF

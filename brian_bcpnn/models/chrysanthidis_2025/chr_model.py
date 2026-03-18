@@ -18,7 +18,8 @@ I_AMPA = g_AMPA * (V_m - E_AMPA) : amp
 g_NMDA : siemens # SUM OVER ALL SYNAPSES
 I_NMDA = g_NMDA * (V_m - E_NMDA) : amp 
 g_GABA : siemens # SUM OVER ALL SYNAPSES
-I_GABA = g_GABA * (V_m - E_GABA) : amp 
+dg_BA/dt = -g_BA/tau_GABA : siemens # inh current from basket cells
+I_GABA = (g_GABA+g_BA) * (V_m - E_GABA) : amp 
 I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
 # BETA CURRENT -----------------------------------
@@ -28,7 +29,7 @@ I_beta = beta_gain * beta : amp
 # EXTERNAL CURRENT -------------------------------
 b_on : 1 # boolean gate of conductance based stimulation
 dg_stim/dt = -g_stim/tau_AMPA : siemens
-I_stim = b_on * g_stim * (V_m-E_AMPA) : amp
+I_stim = (b_on + stim_ta(t,int(i//N_pyr))) * g_stim * (V_m-E_AMPA) : amp
 
 # NOISE CURRENT ----------------------------------
 dg_bg/dt = -g_bg/tau_AMPA : siemens
@@ -60,8 +61,9 @@ dP_i/dt = K*(E_i-P_i)/tau_p : 1 (clock-driven)
 # SYNAPTIC TRACES & WEIGHTS ----------------------
 dE_syn/dt = (Z_i*Z_j_post-E_syn)/tau_e : 1 (clock-driven)
 dP_syn/dt = K*(E_i*E_j_post-P_syn)/tau_p : 1 (clock-driven)
-clip_p_ratio = clip(P_syn/clip(P_i*P_j_post, eps**2, inf), 10e-6, inf) : 1 (constant over dt)
-w = log(clip_p_ratio) : 1 (constant over dt)
+clip_p_ratio = clip(P_syn, eps**2, inf)/clip(P_i*P_j_post, eps**2, inf) : 1 (constant over dt)
+w = (1-w_init)*log(clip_p_ratio) : 1 (constant over dt)
+dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
 # CONDUCTANCES -----------------------------------
 b_glut = int(w > 0) : 1
@@ -84,4 +86,40 @@ S_i = 1
 H_AMPA = 1
 H_NMDA = 1
 H_GABA = 1
+'''
+
+# BASKET CELL EQUATIONS
+eqs_basket = '''
+dV_m/dt = (
+    + g_L*(V_m-E_L_BA) 
+    # - g_L*delta_T*exp((V_m-V_t)/delta_T)
+    # + I_w
+    + I_syn
+)/-C_m : volt (unless refractory)
+dg_ex/dt = -g_ex/tau_AMPA : siemens
+I_syn = g_ex*(V_m-E_AMPA) : amp
+'''
+# eqs_basket_adaptive = '''
+# dV_m/dt = (
+#     + g_L*(V_m-E_L_BA) 
+#     - g_L*delta_T*exp((V_m-V_t)/delta_T)
+#     + I_w
+#     + I_syn
+# )/-C_m : volt (unless refractory)
+# dI_w/dt = -I_w/tau_Iw : amp # adaptation current
+# dg_ex/dt = -g_ex/tau_AMPA : siemens
+# I_syn = g_ex*(V_m-E_AMPA) : amp
+# '''
+reset_ba = '''
+V_m = V_r
+'''
+# reset_ba_adaptive = '''
+# V_m = V_r
+# I_w += b
+# '''
+pyr_basket_on_pre = '''
+g_ex_post+=g_PB
+'''
+basket_pyr_on_pre = '''
+g_BA_post+=g_BP
 '''

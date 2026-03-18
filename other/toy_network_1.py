@@ -1,7 +1,7 @@
 from brian2 import *
 import numpy as np
 import matplotlib.pyplot as plt
-from brian_bcpnn.helper import get_inh_synapses
+from brian_bcpnn.utils.synapse_utils import get_inh_synapses
 
 #prefs.codegen.target = 'numpy'
 #prefs.codegen.loop_invariant_optimisations = False

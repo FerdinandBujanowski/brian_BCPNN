@@ -3,7 +3,7 @@ import sys
 sys.path.append("./")
 
 from brian_bcpnn.models.bujanowski_2026.parameters import * # change this to my own param file asp
-import brian_bcpnn.helper as hlp
+import brian_bcpnn.utils.synapse_utils as hlp
 
 class RecurrentLIF():
 
