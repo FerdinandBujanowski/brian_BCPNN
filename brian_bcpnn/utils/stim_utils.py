@@ -27,17 +27,31 @@ class ColumnCoords:
     def __str__(self):
         return f'[{self.HC};{self.MC}]'
 @dataclass
+class StimTime:
+    t_start: Quantity # in ms
+    t_end: Quantity # in ms
+    def __eq__(self, value):
+        if isinstance(value, StimTime):
+            return self.t_start == value.t_start and self.t_end == value.t_end
+        return False
+    def __str__(self):
+        return f'{self.t_start}-{self.t_end}'
+@dataclass
 class StimProtocol:
     coords: ColumnCoords
-    t_start: Quantity # in ms
-    t_stop: Quantity # in ms
+    stim_time: StimTime
     def __str__(self):
-        return f'({str(self.coords)}, {self.t_start}, {self.t_stop})'
+        return f'({str(self.coords)}, {str(self.stim_time)})'
 @dataclass
 class Pattern:
     coord_list: list[ColumnCoords]
     def __str__(self):
         return '['+', '.join([str(coord) for coord in self.coord_list])+']'
+    def contains(self, coord:ColumnCoords):
+        for c in self.coord_list:
+            if c.HC == coord.HC and c.MC == coord.MC:
+                return True
+        return False
 @dataclass
 class PatternList:
     patterns: list[Pattern]
@@ -61,7 +75,7 @@ def train_patterns_protocol(
     for batch in range(n_batches):
         for i_pattern, pattern in enumerate(pattern_list.patterns):
             for coords in pattern.coord_list:
-                stims.append(StimProtocol(coords, current_time, current_time+t_stim))
+                stims.append(StimProtocol(coords, StimTime(current_time, current_time+t_stim)))
             current_time += t_stim
             if i_pattern < (len(pattern_list.patterns) - 1):
                 current_time += t_isi
@@ -77,8 +91,9 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
     hc_list = []
     mc_list = []
     for stim in stims:
-        times.add(int(stim.t_start/ms))
-        times.add(int(stim.t_stop/ms))
+        stim_time = stim.stim_time
+        times.add(int(stim_time.t_start/ms))
+        times.add(int(stim_time.t_end/ms))
         hc_list.append(stim.coords.HC)
         mc_list.append(stim.coords.MC)
 
@@ -88,11 +103,26 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
     stim_array = np.zeros(shape=(N_H*N_M,n_time_steps),dtype=int32)
     for i, t in enumerate(range(0, int(t_total/ms), int(stim_dt/ms))):
         for stim in stims:
-            if stim.t_start/ms <= t and stim.t_stop/ms > t:
+            if stim.stim_time.t_start/ms <= t and stim.stim_time.t_end/ms > t:
                 stim_array[stim.coords.HC*N_M+stim.coords.MC, i] = 1
 
     # print(stim_array.T)
     return TimedArray(stim_array.T, dt=stim_dt)
+
+def get_pattern_time_dict(pl:PatternList, stims:list[StimProtocol]) -> dict[str,list[StimTime]]:
+    pt_dict = dict()
+    current_pattern = 1
+    for pattern in pl.patterns:
+        new_key = f'Pattern {current_pattern}'
+        current_pattern += 1
+        pt_dict[new_key] = []
+
+        for stim in stims:
+            st = stim.stim_time
+            if pattern.contains(stim.coords) and st not in pt_dict[new_key]:
+                pt_dict[new_key].append(st)
+
+    return pt_dict
 
 # test_protocol = [
 #     StimProtocol(ColumnCoords(0, 0), 250*ms, 350*ms),

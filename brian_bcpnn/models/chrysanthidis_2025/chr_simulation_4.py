@@ -4,8 +4,8 @@ from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
-from brian_bcpnn.plot import trains, synapses, traces
-from brian_bcpnn.helper import add_time
+from brian_bcpnn.plot import trains, composite
+from brian_bcpnn.utils.synapse_utils import add_time
 from tqdm import tqdm
 
 namespace = chr_namespace
@@ -83,17 +83,9 @@ ax.set_xlabel('time (seconds)')
 plt.show()
 
 # First Synapse
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, sharex=True,
-                                     gridspec_kw={'height_ratios': (1, 3, 3, 3)})
-
-trains.compare_two_trains(ax1, spikemon, first_same[0], first_same[1], t_div=second)
-
-traces.plot_z_traces(ax2, recmon, synmon_same, model.S_REC, first_same[0], first_same[1], t_div=second)
-
-traces.plot_e_traces(ax3, recmon, synmon_same, model.S_REC, first_same[0], first_same[1], t_div=second)
-
-traces.plot_p_traces(ax4, recmon, synmon_same, model.S_REC, first_same[0], first_same[1], t_div=second)
-
+ax4 = composite.plot_traces(
+    first_same[0], first_same[1],
+    spikemon, recmon, synmon_same, model.S_REC, t_div=second
+)
 ax4.set_xticks(np.arange(0, t_total / second, 0.5))
-ax4.set_xlabel("Time (seconds)")
 plt.show()

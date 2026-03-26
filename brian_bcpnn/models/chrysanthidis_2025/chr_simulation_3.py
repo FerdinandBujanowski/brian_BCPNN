@@ -1,75 +1,128 @@
 from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
-from brian_bcpnn.plot import trains, synapses
-from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs
+from brian_bcpnn.plot import trains, synapses, composite
+from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_time
+import brian_bcpnn.utils.stim_utils as stils
 
 # prefs.codegen.target = 'numpy'
 # prefs.codegen.loop_invariant_optimisations = False
 # np.seterr(all='raise')
 
-N_hyper = 4
+N_hyper = 5
 N_mini = 2
 N_pyr = 30
 N_basket = 4
-N_batches = 10
-
-mc_range_i = range(N_pyr) # home MC for comparison
-mc_range_j1 = range(2*N_pyr,3*N_pyr) # same activation MC for comparison
-mc_range_j2 = range(3*N_pyr,4*N_pyr) # different activation MC for comparison
+N_batches = 5
 
 model = ChrysanthidisNetwork(
     N_hyper, N_mini, N_pyr=N_pyr, N_basket=N_basket, 
-    filepath='data/chr/stable_init_test.data', N_poisson=2
-)
-model.namespace['eps'] = 1/200000
-
-spikemon = model.add_spikemon()
-synmon = model.add_synmon(['w'], model.S_REC[0:N_pyr,2*N_pyr:4*N_pyr])
-basmon = model.add_basmon()
-
-# show minicolumns that will be studied later on
-fig, ax = plt.subplots()
-synapses.plot_connectivity(
-    ax, model.S_REC, model.N,
-    colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
-    aspect='equal'
-    )
-plt.show()
-
-namespace = model.namespace
-defaultclock.dt = namespace['t_sim']
-t_stim, t_isi = [namespace[s] for s in ['t_stim', 'T_stim']]
-# TODO put these into param file(s)
-t_init, t_end = 100*ms, 200*ms
-# calling train_n_epochs runs the simulation
-t_total = train_n_epochs(
-    model, t_init, t_stim, t_isi, t_end,
-    n_batches=N_batches
+    filepath='data/chr/stable_init_eps_5.data', N_poisson=2
 )
 
-# PLOTS
-fig, [ax0, ax1, ax2] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (1, 4, 4)})
-trains.get_full_train(ax0, basmon, model.N_basket_total, t_total, t_div=second, c='b')
-ax0.set_ylabel('# BA neuron')
-trains.get_full_train(ax1, spikemon, model.N, t_total, t_div=second)
-ax1.set_ylabel('# PYR neuron')
-
+# SYNAPSE INDEXING
+mc_range_i = range(N_pyr) # home MC for comparison
+mc_range_j1 = range(N_mini*N_pyr,(N_mini+1)*N_pyr) # same activation MC for comparison
+mc_range_j2 = range((2*N_mini-1)*N_pyr,2*N_mini*N_pyr) # different activation MC for comparison
 syns_zipped = list(zip(model.S_REC.i, model.S_REC.j))
 all_same_synapses = [(int(i),int(j)) for i,j in syns_zipped if i in mc_range_i and j in mc_range_j1]
 all_diff_synapses = [(int(i),int(j)) for i,j in syns_zipped if i in mc_range_i and j in mc_range_j2]
+(same_i, same_j) = all_same_synapses[0]
+(diff_i, diff_j) = all_diff_synapses[0]
 
-synapses.plot_weight_trajectory(
-    ax2, model.S_REC, synmon,
-    all_same_synapses, 
-    t_div=second, c='green', label='co-active neurons'
+# default spike monitors
+spikemon = model.add_spikemon()
+basmon = model.add_basmon()
+
+# custom state monitors
+synmon_mc_1 = StateMonitor(
+    model.S_REC, variables=['w'], 
+    record=model.S_REC[min(mc_range_i):max(mc_range_i)+1,min(mc_range_j1):max(mc_range_j1)+1]
 )
-synapses.plot_weight_trajectory(
-    ax2, model.S_REC, synmon,
-    all_diff_synapses,
-    t_div=second, c='red', label='competing neurons'
+synmon_mc_2 = StateMonitor(
+    model.S_REC, variables=['w'],
+    record=model.S_REC[min(mc_range_i):max(mc_range_i)+1,min(mc_range_j2):max(mc_range_j2)+1]
 )
-ax2.grid()
-ax2.legend()
-plt.title(f'{N_batches} batches, t_total={t_total}')
+# TODO create add_tracemonitor method in network class or TraceMonitor subclass of StateMonitor
+tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[same_j, diff_j])
+syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[same_i, same_j])
+syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[diff_i, diff_j])
+
+for m in [synmon_mc_1, synmon_mc_2, tracemon, syn_tracemon_s1, syn_tracemon_s2]:
+    model.add_monitor(m, m.name)
+
+# show minicolumns that will be studied later on
+# fig, ax = plt.subplots()
+# synapses.plot_connectivity(
+#     ax, model.S_REC, model.N,
+#     colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
+#     aspect='equal'
+#     )
+# plt.show()
+
+namespace = model.namespace
+defaultclock.dt = namespace['t_sim']
+t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
+# TODO put these into param file(s)
+t_init, t_end = 100*ms, 200*ms
+
+# calculating eps from total number of timesteps
+model.namespace['eps'] = defaultclock.dt/get_total_time(t_init, t_stim, t_isi, t_end, N_batches)
+print(model.namespace['eps'])
+# dt/t_total is the same as 1/n_steps <=> 1/(t_total/dt)
+
+# calling train_n_epochs runs the simulation
+pattern_list = stils.get_orthogonal_patterns(model.N_hyper, model.N_mini)
+stims, t_total = train_n_epochs(
+    model, t_init, t_stim, t_isi, t_end,
+    pattern_list,
+    n_batches=N_batches
+)
+
+pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
+# for key in pt_dict.keys():
+#     print(f'[{key}]: {[str(i) for i in pt_dict[key]]}')
+
+model.save_traces('data/chr/trained/trained_5_hc_2_p.data')
+
+# PLOTS
+for n_pattern in [0, 1]:
+    fig, ax = plt.subplots()
+    trains.get_active_freqs_per_batch(
+        ax,
+        spikemon, n_pattern, model.N_mini, model.N_pyr, pattern_list, pt_dict
+    )
+    plt.xlabel('Batch')
+    plt.ylabel('Spiking Frequency')
+    plt.title(f'Pattern {n_pattern+1}')
+    plt.show()
+
+composite.plot_training_protocol(
+    model, basmon, spikemon,
+    [
+        (synmon_mc_1, all_same_synapses, 'green', 'co-active neurons'),
+        (synmon_mc_2, all_diff_synapses, 'red', 'competing neurons')
+    ],
+    N_batches, t_total, t_div=second,
+    pt_dict=pt_dict
+)
+plt.show()
+
+ax4 = composite.plot_traces(
+    same_i, same_j,
+    spikemon, tracemon, syn_tracemon_s1, model.S_REC,
+    t_div=second
+)
+plt.show()
+
+ax5 = composite.plot_traces(
+    diff_i, diff_j,
+    spikemon, tracemon, syn_tracemon_s2, model.S_REC,
+    t_div=second
+)
+plt.show()
+
+fig, ax = plt.subplots()
+im = synapses.plot_weights(ax, model.S_REC, model.N)
+fig.colorbar(im, ax=ax)
 plt.show()

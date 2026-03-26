@@ -11,6 +11,11 @@ from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
 from brian_bcpnn.stim_protocols.init_params import init_network_params
 
 
-model = ChrysanthidisNetwork(4, 2, 30, 4, namespace=chr_namespace)
-
-init_network_params(model, 'data/chr/stable_init_test.data')
+N_H = 5
+N_M = 2
+N_PYR = 30
+model = ChrysanthidisNetwork(N_H, N_M, N_PYR, 4, namespace=chr_namespace)
+p_c = 100/(N_H*N_PYR)
+model.namespace['cp_PP'] = p_c
+model.namespace['cp_PPL'] = p_c
+init_network_params(model, 'data/chr/stable_init_eps_5.data')

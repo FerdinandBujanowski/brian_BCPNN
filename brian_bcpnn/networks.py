@@ -51,6 +51,7 @@ class CorticalNetwork():
         self.namespace = namespace
 
     def run(self, time, namespace=None):
+        self.check_inits()
         if namespace is not None:
             self.network.run(time, namespace=namespace)
         elif self.namespace is not None:
@@ -58,11 +59,19 @@ class CorticalNetwork():
         else:
             self.network.run(time)
 
+    def init_traces(self):
+        pass
+
+    def check_inits(self):
+        pass
+
 class ChrysanthidisNetwork(CorticalNetwork):
 
     def __init__(self, N_hyper, N_mini, N_pyr, N_basket=0, namespace=chr_namespace, N_poisson=1, filepath=None):
         super().__init__(N_hyper, N_mini, N_pyr, N_basket, namespace)
         self.namespace['N_pyr'] = N_pyr
+        self.REC_TRACES = ['Z_j', 'E_j', 'P_j']
+        self.S_REC_TRACES = ['Z_i', 'E_i', 'P_i', 'E_syn', 'P_syn']
     
         # RECURRENT HYPER-MINI-COLUMN LAYER
         self.REC = NeuronGroup(
@@ -81,7 +90,6 @@ class ChrysanthidisNetwork(CorticalNetwork):
                 self.data = data
         else:
             self.REC.V_m = self.namespace['E_L']
-            # self.REC.P_j = self.namespace['eps']
 
         # RECURRENT LAYER POISSON INPUT
         noise_pos_input = PoissonInput(target=self.REC, target_var='g_bg', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg'])
@@ -100,6 +108,7 @@ class ChrysanthidisNetwork(CorticalNetwork):
 
         # create connections
         if hasattr(self, 'data'):
+            print(f'Initialising model parameters from file {filepath}')
             source_rec = self.data['S_source']
             target_rec = self.data['S_target']
             self.S_REC.connect(i=source_rec, j=target_rec)
@@ -110,6 +119,7 @@ class ChrysanthidisNetwork(CorticalNetwork):
             self.S_REC.E_syn = self.data['E_syn']
             self.S_REC.P_syn = self.data['P_syn']
         else:
+            print('Randomly generating network connectivity')
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_hyper, self.N_mini, self.N_pyr, 
                 # 0.9, 0.5, 0.1 # to test connectivity
@@ -118,6 +128,7 @@ class ChrysanthidisNetwork(CorticalNetwork):
                 cp_diff_hyper=self.namespace['cp_PPL']
             )
             self.S_REC.connect(i=source_rec, j=target_rec)
+            self.init_traces()
             # self.S_REC.P_i = self.namespace['eps']
 
         # BASKET CELLS
@@ -156,11 +167,17 @@ class ChrysanthidisNetwork(CorticalNetwork):
         # MONITORS
         # ... to be added in file instantiating class
 
-    def run(self, time):
+    def check_inits(self):
         if self.namespace['stim_ta'] is None:
             raise ValueError('No stimulation TimedArray provided.')
-        else:
-            super().run(time, self.namespace)
+        rec_trace_values = self.REC.get_states(self.REC_TRACES)
+        for key in rec_trace_values.keys():
+            if np.any(rec_trace_values[key] == 0.):
+                raise ValueError('All trace variables should be initialized to above zero.')
+        s_rec_trace_values = self.S_REC.get_states(self.S_REC_TRACES)
+        for key in s_rec_trace_values.keys():
+            if np.any(s_rec_trace_values[key] == 0.):
+                raise ValueError('All trace variables should be initialized to above zero.')
 
     def add_synmon(self, variables, record):
         synmon = StateMonitor(self.S_REC, variables=variables, record=record)
@@ -178,6 +195,12 @@ class ChrysanthidisNetwork(CorticalNetwork):
         basmon = SpikeMonitor(self.BA)
         self.add_monitor(basmon, basmon.name)
         return basmon
+    
+    def init_traces(self):
+        eps = self.namespace['eps']
+        print(f'Initialising model traces with eps={eps}')
+        self.REC.set_states({'Z_j': eps, 'E_j': eps, 'P_j': eps})
+        self.S_REC.set_states({'Z_i': eps, 'E_i': eps, 'P_i': eps, 'E_syn': eps**2, 'P_syn': eps**2})
 
     def save_traces(self, path):
         data = dict()

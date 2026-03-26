@@ -7,14 +7,11 @@ import brian_bcpnn.utils.stim_utils as stils
 def train_n_epochs(
         model:CorticalNetwork,
         t_init, t_stim, t_isi, t_end,
-        patterns:stils.PatternList=None,
+        patterns:stils.PatternList,
         n_batches=1,
         stim_ta_string='stim_ta'
 ):
     defaultclock.dt = model.namespace['t_sim']
-
-    if patterns is None:
-        patterns = stils.get_orthogonal_patterns(model.N_hyper, model.N_mini)
     
     stims, t_total = stils.train_patterns_protocol(
         patterns,
@@ -29,4 +26,12 @@ def train_n_epochs(
 
     model.run(t_total)
 
-    return t_total
+    return stims, t_total
+
+def get_total_time(t_init, t_stim, t_isi, t_end, n_batches=1):
+    return (
+        + t_init
+        + n_batches*t_stim
+        + (n_batches-1)*t_isi
+        + t_end
+    )
