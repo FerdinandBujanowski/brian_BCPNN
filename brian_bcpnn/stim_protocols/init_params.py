@@ -21,14 +21,15 @@ def init_network_params(model:CorticalNetwork, filepath):
     w_init_mon = StateMonitor(model.S_REC, variables=['w_init'], record=model.S_REC[chosen_pre[0], chosen_post[0]])
     for m in [synmon, w_init_mon]:
         model.add_monitor(m, m.name)
+
+    statemon = model.add_statemon(['V_m'], record=[0])
     
     # Important first step: freeze plasticity at start of simulation,
     # slowly ease back into it through 'dw_init/dt' in chr_model.py synapse equation
-    # TODO update this with TimedArray
 
     no_stim = []
     t_total = 20*second
-    model.namespace['stim_ta'] = stils.stim_times_to_timed_array(no_stim, t_total, model.N_hyper, model.N_mini)
+    model.namespace['stim_ta'] = stils.stim_times_to_timed_array(no_stim, t_total, model.N_H, model.N_M)
     
     # initialize p-traces and run without plasticity
     original_K = model.namespace['K']
@@ -67,7 +68,16 @@ def init_network_params(model:CorticalNetwork, filepath):
     ax4.set_ylabel('w_init')
     plt.show()
 
+    fig, ax = plt.subplots()
+    ax.plot(statemon.t/second, statemon.V_m[0]/mV)
+    ax.set_title('Example Neuron Membrane Voltage')
+    ax.set_xlabel(f'Time/{second}')
+    ax.set_ylabel('Voltage/mV')
+    plt.show()
+
     return spikemon
 
-def load_params_test():
+# idea is to take saved params of a smaller network,
+# and to randomly initialise bigger network using statistics from saved params
+def init_from_smaller():
     pass

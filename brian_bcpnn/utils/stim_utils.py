@@ -53,6 +53,10 @@ class Pattern:
                 return True
         return False
 @dataclass
+class PatternProtocol:
+    pattern: Pattern
+    stim_time: StimTime
+@dataclass
 class PatternList:
     patterns: list[Pattern]
     def __str__(self):
@@ -64,6 +68,15 @@ class PatternList:
 
 def get_orthogonal_patterns(N_H, N_M) -> PatternList:
     return PatternList([Pattern([ColumnCoords(h, m) for h in range(N_H)]) for m in range(N_M)])
+
+def get_incomplete_patterns(original_patterns: PatternList, n_MC) -> PatternList:
+    new_list = []
+
+    for pattern in original_patterns.patterns:
+        chosen_subset = np.random.choice(pattern.coord_list, min(len(pattern.coord_list), n_MC), replace=False)
+        new_list.append(Pattern(chosen_subset))
+
+    return PatternList(new_list)
 
 def train_patterns_protocol(
         pattern_list: PatternList, 
@@ -82,9 +95,13 @@ def train_patterns_protocol(
 
         if batch < (n_batches-1):
             current_time += t_isi
-        else:
-            current_time += t_end
+
+    current_time += t_end
+
     return stims, current_time
+
+def pattern_protocol_to_stim_protocol(pattern_protocol:PatternProtocol) -> list[StimProtocol]:
+    return [StimProtocol(coords, pattern_protocol.stim_time) for coords in pattern_protocol.pattern.coord_list]
 
 def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:int, N_M:int):
     times = {int(t_total/ms)}

@@ -21,9 +21,8 @@ def train_n_epochs(
 
     model.namespace[stim_ta_string] = stils.stim_times_to_timed_array(
         stims, t_total,
-        model.N_hyper, model.N_mini
+        model.N_H, model.N_M
     )
-
     model.run(t_total)
 
     return stims, t_total
@@ -32,6 +31,6 @@ def get_total_time(t_init, t_stim, t_isi, t_end, n_batches=1):
     return (
         + t_init
         + n_batches*t_stim
-        + (n_batches-1)*t_isi
+        + max(n_batches-1,0)*t_isi
         + t_end
     )

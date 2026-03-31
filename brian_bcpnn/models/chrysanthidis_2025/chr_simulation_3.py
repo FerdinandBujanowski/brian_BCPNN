@@ -1,128 +1,92 @@
+# SIMULATION PURPOSE: Load previously saved network data of a 4x2x30 network,
+# Run tests on non stimulation and stimulation dynamics
+
 from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
-from brian_bcpnn.plot import trains, synapses, composite
-from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_time
+from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
+from brian_bcpnn.plot import trains, synapses
+from brian_bcpnn.utils.stim_utils import add_time, StimProtocol, ColumnCoords
 import brian_bcpnn.utils.stim_utils as stils
 
-# prefs.codegen.target = 'numpy'
-# prefs.codegen.loop_invariant_optimisations = False
-# np.seterr(all='raise')
+namespace = chr_namespace
+defaultclock.dt = namespace['t_sim']
 
-N_hyper = 5
+N_hyper = 4
 N_mini = 2
 N_pyr = 30
 N_basket = 4
-N_batches = 5
+t_stim, T_stim = [chr_namespace[s] for s in ['t_stim', 'T_stim']]
 
 model = ChrysanthidisNetwork(
     N_hyper, N_mini, N_pyr=N_pyr, N_basket=N_basket, 
-    filepath='data/chr/stable_init_eps_5.data', N_poisson=2
+    namespace=namespace, filepath='data/chr/stable_init_test.data', N_poisson=2
 )
 
-# SYNAPSE INDEXING
-mc_range_i = range(N_pyr) # home MC for comparison
-mc_range_j1 = range(N_mini*N_pyr,(N_mini+1)*N_pyr) # same activation MC for comparison
-mc_range_j2 = range((2*N_mini-1)*N_pyr,2*N_mini*N_pyr) # different activation MC for comparison
-syns_zipped = list(zip(model.S_REC.i, model.S_REC.j))
-all_same_synapses = [(int(i),int(j)) for i,j in syns_zipped if i in mc_range_i and j in mc_range_j1]
-all_diff_synapses = [(int(i),int(j)) for i,j in syns_zipped if i in mc_range_i and j in mc_range_j2]
-(same_i, same_j) = all_same_synapses[0]
-(diff_i, diff_j) = all_diff_synapses[0]
+spikemon = SpikeMonitor(model.REC)
+model.add_monitor(spikemon, 'spikemon')
+basmon = SpikeMonitor(model.BA)
+model.add_monitor(basmon, 'basmon')
 
-# default spike monitors
-spikemon = model.add_spikemon()
-basmon = model.add_basmon()
-
-# custom state monitors
-synmon_mc_1 = StateMonitor(
-    model.S_REC, variables=['w'], 
-    record=model.S_REC[min(mc_range_i):max(mc_range_i)+1,min(mc_range_j1):max(mc_range_j1)+1]
-)
-synmon_mc_2 = StateMonitor(
-    model.S_REC, variables=['w'],
-    record=model.S_REC[min(mc_range_i):max(mc_range_i)+1,min(mc_range_j2):max(mc_range_j2)+1]
-)
-# TODO create add_tracemonitor method in network class or TraceMonitor subclass of StateMonitor
-tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[same_j, diff_j])
-syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[same_i, same_j])
-syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[diff_i, diff_j])
-
-for m in [synmon_mc_1, synmon_mc_2, tracemon, syn_tracemon_s1, syn_tracemon_s2]:
-    model.add_monitor(m, m.name)
-
-# show minicolumns that will be studied later on
-# fig, ax = plt.subplots()
-# synapses.plot_connectivity(
-#     ax, model.S_REC, model.N,
-#     colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
-#     aspect='equal'
-#     )
+# t_total = 0*ms
+# Plot connectivity and initial weights distribution from file
+# t_total, t_init = add_time(t_total, 1*ms)
+# model.run(t_init) # run a tiny bit otherwise all weights are = 0
+# fig, [ax1, ax2] = plt.subplots(1, 2)
+# synapses.hist_presyn_count(ax1, model.S_REC, model.N)
+# im = synapses.plot_weights(ax2, model.S_REC, model.N)
+# fig.colorbar(im, ax=ax2)
 # plt.show()
 
-namespace = model.namespace
-defaultclock.dt = namespace['t_sim']
-t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
-# TODO put these into param file(s)
-t_init, t_end = 100*ms, 200*ms
+# get orthogonal patterns
+orth_patterns = stils.get_orthogonal_patterns(N_hyper, N_mini)
+first_pattern = orth_patterns.subset(0)
+t_init = 1*second
+t_stim = 1*second
+t_end = .5*second
+stims, t_total = stils.train_patterns_protocol(first_pattern, t_init, t_stim, 0*ms, t_end)
+model.namespace['stim_ta'] = stils.stim_times_to_timed_array(stims, t_total, N_hyper, N_mini)
+model.run(t_total)
 
-# calculating eps from total number of timesteps
-model.namespace['eps'] = defaultclock.dt/get_total_time(t_init, t_stim, t_isi, t_end, N_batches)
-print(model.namespace['eps'])
-# dt/t_total is the same as 1/n_steps <=> 1/(t_total/dt)
+# TODO turn plot into 3 part plot (raster, hist before stim, hist after stim)
+fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
+trains.get_full_train(ax1, spikemon, model.N, t_total, t_div=second)
+ax1.set_xlabel('Time (seconds)')
 
-# calling train_n_epochs runs the simulation
-pattern_list = stils.get_orthogonal_patterns(model.N_hyper, model.N_mini)
-stims, t_total = train_n_epochs(
-    model, t_init, t_stim, t_isi, t_end,
-    pattern_list,
-    n_batches=N_batches
-)
+freqs = trains.get_spiking_histogram(ax2, spikemon, model.N, t_start=0*ms, t_stop=t_init)
+# print(round(np.mean(freqs), 2))
+ax2.set_xlabel('Frequency (Hz)')
+ax2.set_ylabel('Neuron Count')
+ax2.set_title('Firing Frequency Distribution Without Stimulus')
 
-pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
-# for key in pt_dict.keys():
-#     print(f'[{key}]: {[str(i) for i in pt_dict[key]]}')
-
-model.save_traces('data/chr/trained/trained_5_hc_2_p.data')
-
-# PLOTS
-for n_pattern in [0, 1]:
-    fig, ax = plt.subplots()
-    trains.get_active_freqs_per_batch(
-        ax,
-        spikemon, n_pattern, model.N_mini, model.N_pyr, pattern_list, pt_dict
-    )
-    plt.xlabel('Batch')
-    plt.ylabel('Spiking Frequency')
-    plt.title(f'Pattern {n_pattern+1}')
-    plt.show()
-
-composite.plot_training_protocol(
-    model, basmon, spikemon,
-    [
-        (synmon_mc_1, all_same_synapses, 'green', 'co-active neurons'),
-        (synmon_mc_2, all_diff_synapses, 'red', 'competing neurons')
-    ],
-    N_batches, t_total, t_div=second,
-    pt_dict=pt_dict
-)
+freqs = trains.get_spiking_histogram(ax3, spikemon, model.N, t_start=t_init, t_stop=t_init+t_stim)
+# print(round(np.mean(freqs), 2))
+ax3.set_xlabel('Frequency (Hz)')
+ax3.set_ylabel('Neuron Count')
+ax3.set_title('Firing Frequency Distribution With Stimulus')
 plt.show()
 
-ax4 = composite.plot_traces(
-    same_i, same_j,
-    spikemon, tracemon, syn_tracemon_s1, model.S_REC,
-    t_div=second
-)
-plt.show()
+ax1 = plt.subplot2grid((3, 6), (0, 0), colspan=2, rowspan=1)
+ax2 = plt.subplot2grid((3, 6), (1, 0), colspan=2, rowspan=2, sharex=ax1)
+ax3 = plt.subplot2grid((3, 6), (0, 2), colspan=2, rowspan=3)
+ax4 = plt.subplot2grid((3, 6), (0, 4), colspan=2, rowspan=3, sharey=ax3)
 
-ax5 = composite.plot_traces(
-    diff_i, diff_j,
-    spikemon, tracemon, syn_tracemon_s2, model.S_REC,
-    t_div=second
-)
-plt.show()
+trains.get_full_train(ax1, basmon, model.N_basket_total, t_total, t_div=second, c='b')
+ax1.set_ylabel('# BA neuron')
+trains.get_full_train(ax2, spikemon, model.N, t_total, t_div=second)
+ax2.set_ylabel('# PYR neuron')
+ax2.set_xlabel('Time (second)')
 
-fig, ax = plt.subplots()
-im = synapses.plot_weights(ax, model.S_REC, model.N)
-fig.colorbar(im, ax=ax)
+freqs = trains.get_spiking_histogram(ax3, basmon, model.N_basket_total, t_start=0*ms, t_stop=t_init)
+# print(round(np.mean(freqs), 2))
+ax3.set_xlabel('Frequency (Hz)')
+ax3.set_ylabel('Neuron Count')
+ax3.set_title('BA Spiking Dist (No Stimulus)')
+
+freqs = trains.get_spiking_histogram(ax4, basmon, model.N_basket_total, t_start=t_init, t_stop=t_init+t_stim)
+# print(round(np.mean(freqs), 2))
+ax4.set_xlabel('Frequency (Hz)')
+ax4.set_title('BA Spiking Dist (Stimulus)')
+
+plt.tight_layout()
 plt.show()

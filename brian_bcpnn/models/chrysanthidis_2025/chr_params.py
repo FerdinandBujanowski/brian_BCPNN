@@ -1,5 +1,22 @@
 from brian2 import *
 
+# print((470*Hz * 0.1*ms))
+
+# p_pos = 470*Hz * 0.1*ms
+# n_step = 10000
+# print(p_pos * n_step)
+# # print(sum([1 if np.random.random() < p_pos else 0 for _ in range(10000)]))
+
+# p_no_pos = 1-p_pos
+# print(p_no_pos**5)
+
+# p_at_least_1_pos = 1-(p_no_pos**5)
+# print(p_at_least_1_pos*n_step)
+# # print(sum([1 if np.random.random() < p_at_least_1_pos else 0 for _ in range(10000)]))
+
+# p_all_neg = p_pos ** 5
+# print(p_all_neg * p_no_pos * n_step)
+
 chr_namespace = {
 # SIMULATION PARAMETERS
 't_sim': 0.1 * ms,
@@ -12,6 +29,7 @@ chr_namespace = {
 'g_L': 14 * nS, # Leak conductance
 'delta_T': 3 * mV, # Upstroke slope factor
 'V_t': -55 * mV, # Spike threshold
+'V_peak': 20 * mV, # peak voltage at which reset actually happens
 'V_r': -60 * mV, # Spike reset potential
 'tau_ref': 5 * ms, # Refactory period
 't_spike': 0.1 * ms, # time of one spike
@@ -32,7 +50,7 @@ chr_namespace = {
 'f_min': 0.2 * Hz, # BCPNN lowest spiking rate
 'f_max': 25 * Hz, # BCPNN highest spiking rate # 25 * Hz
 'eps': 0.0026, # BCPNN lowest probability
-'tau_z_i': 5 * ms, # AMPA Z trace time constant ('tau_z_AMPA')
+'tau_z_i': 5*ms, # AMPA Z trace time constant ('tau_z_AMPA')
 'tau_z_j': 5*ms, #100 * ms, # NMDA Z trace time constant ('tau_z_NMDA')
 'tau_p': 10 * second, # P trace time constant
 'tau_e': 500 * ms, # E trace time constant
@@ -42,9 +60,8 @@ chr_namespace = {
 't_delay': 1.5 * ms, # TODO paper sets one value for each synapse
 
 # CONNECTIVITY
-'cp_PP': 0.2, # pyr-pyr recurrent connection probability # 0.2
-# TODO implement adapting mechanism that automatically changes connection probas
-'cp_PPL': 0.2, # pyr-pyr long-range connection probability # 0.2
+# 'cp_PP': 0.2, # pyr-pyr recurrent connection probability
+# 'cp_PPL': 0.2, # pyr-pyr long-range connection probability
 'cp_PB': 0.7, # pyr-basket connection probability # 0.7
 'cp_BP': 0.7, # basket-pyr connection probability # 0.7
 'E_L_BA': -70*mV, # basket cell leak reversal potential (added myself)
@@ -54,10 +71,125 @@ chr_namespace = {
 # STIMULATION
 'r_bg': 470 * Hz, # Background noise
 'gr_bg': 1.5 * nS, # Background conductance (+)
-'gr_bg_n': -1.5 * nS, # Background conductance (-)
+'gr_bg_n': 1.5 * nS, # Background conductance (-)
 't_stim': 250 * ms, # Stimulation duration
 'r_stim': 340 * Hz, # Stimulation rate
 'gr_stim': 1.5 * nS, # Stimulation conductance
 'T_stim': 200 * ms, # Interstimulus interval
 't_isi': 200 * ms
 }
+
+# EQUATIONS
+
+chr_equations = {
+    # RECURRENT HYPER-MINI-COLUMN LAYER
+    'eqs_rec': '''
+    # VOLTAGE ----------------------------------------
+    dV_m/dt = (
+        + g_L*(V_m-E_L) 
+        - g_L*delta_T*exp((V_m-V_t)/delta_T)
+        + I_w
+        + I_beta
+        + I_syn
+        + I_stim
+        + I_noise
+    )/-C_m : volt (unless refractory)
+    dI_w/dt = -I_w/tau_Iw : amp # adaptation current
+
+    # SYNAPTIC CURRENTS ------------------------------
+    g_AMPA : siemens # SUM OVER ALL SYNAPSES
+    I_AMPA = g_AMPA * (V_m - E_AMPA) : amp
+    g_NMDA : siemens # SUM OVER ALL SYNAPSES
+    I_NMDA = g_NMDA * (V_m - E_NMDA) : amp 
+    g_GABA : siemens # SUM OVER ALL SYNAPSES
+    dg_BA/dt = -g_BA/tau_GABA : siemens # inh current from basket cells
+    I_GABA = (g_GABA+g_BA) * (V_m - E_GABA) : amp 
+    I_syn = I_AMPA + I_NMDA + I_GABA : amp
+
+    # BETA CURRENT -----------------------------------
+    beta = log(P_j) : 1
+    I_beta = beta_gain * beta : amp
+
+    # EXTERNAL CURRENT -------------------------------
+    b_on : 1 # boolean gate of conductance based stimulation
+    dg_stim/dt = -g_stim/tau_AMPA : siemens
+    I_stim = (b_on + stim_ta(t,int(i//N_pyr))) * g_stim * (V_m-E_AMPA) : amp
+
+    # NOISE CURRENT ----------------------------------
+    db_pos_noise/dt = -b_pos_noise/t_sim : 1
+    dg_pos_noise/dt = -g_pos_noise/tau_AMPA + b_pos_noise*gr_bg/t_sim : siemens
+    db_neg_noise/dt = -b_neg_noise/t_sim : 1
+    dg_neg_noise/dt = -g_neg_noise/tau_AMPA + b_neg_noise*gr_bg_n/t_sim : siemens
+    I_noise = (g_pos_noise-g_neg_noise)*(V_m-E_AMPA) : amp
+
+    # SPIKE TRAIN ------------------------------------
+    dS/dt = -S/t_sim : 1
+
+    # POSTSYNAPTIC (j) TRACES ------------------------
+    dZ_j/dt = (S/(f_max*t_spike) - Z_j + eps)/tau_z_j : 1
+    dE_j/dt = (Z_j-E_j)/tau_e : 1
+    dP_j/dt = K*(E_j-P_j)/tau_p : 1
+    ''',
+
+    'reset_rec': '''
+    V_m = V_r
+    I_w += b
+    S = 1
+    ''',
+
+    # BCPNN SYNAPSES
+    'bcpnn_syn_model': '''
+    # PRESYNAPTIC (i) TRACES -------------------------
+    dS_i/dt = -S_i/t_sim : 1 (clock-driven)
+    dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + eps)/tau_z_i : 1 (clock-driven)
+    dE_i/dt = (Z_i-E_i)/tau_e : 1 (clock-driven)
+    dP_i/dt = K*(E_i-P_i)/tau_p : 1 (clock-driven)
+
+    # SYNAPTIC TRACES & WEIGHTS ----------------------
+    dE_syn/dt = (Z_i*Z_j_post-E_syn)/tau_e : 1 (clock-driven)
+    dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
+    w = (1-w_init)*log(P_syn/(P_i*P_j_post)) : 1 (constant over dt)
+    dw_init/dt = -w_init/tau_init : 1 (clock-driven)
+
+    # CONDUCTANCES -----------------------------------
+    b_glut = int(w > 0) : 1
+    # AMPA -------------------------------------------
+    w_AMPA = b_glut * w_gain_AMPA * w : siemens
+    dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    g_AMPA_post = w_AMPA * H_AMPA : siemens (summed)
+    # NMDA -------------------------------------------
+    w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_NMDA_post = w_NMDA * H_NMDA : siemens (summed)
+    # GABA -------------------------------------------
+    w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
+    dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
+    g_GABA_post = w_GABA * H_GABA : siemens (summed)
+    ''',
+
+    'bcpnn_syn_on_pre': '''
+    S_i = 1
+    H_AMPA = 1
+    H_NMDA = 1
+    H_GABA = 1
+    ''',
+
+    # BASKET CELL EQUATIONS
+    'eqs_basket': '''
+    dV_m/dt = (
+        + g_L*(V_m-E_L_BA) 
+        + I_syn
+    )/-C_m : volt (unless refractory)
+    dg_ex/dt = -g_ex/tau_AMPA : siemens
+    I_syn = g_ex*(V_m-E_AMPA) : amp
+    ''',
+    'reset_ba': '''
+    V_m = V_r
+    ''',
+    'pyr_basket_on_pre': '''
+    g_ex_post+=g_PB
+    ''',
+    'basket_pyr_on_pre': '''
+    g_BA_post+=g_BP
+    '''
+    }

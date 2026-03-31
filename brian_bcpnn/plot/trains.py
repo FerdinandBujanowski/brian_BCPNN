@@ -6,14 +6,19 @@ sys.path.append("./")
 import brian_bcpnn.utils.synapse_utils as sils
 from brian_bcpnn.utils.stim_utils import StimTime, PatternList
 
-def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms):
-    ax.scatter(spikemon.t/t_div, spikemon.i[:], marker='_', color=c, s=10)
+def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr=0, to=None):
+    max_N = N if to is None else to
+    t_array, i_array = [], []
+    for t, i in zip(spikemon.t, spikemon.i):
+        if i >= fr and i < max_N:
+            t_array.append(t)
+            i_array.append(i)
+    
+    ax.scatter(t_array/t_div, i_array, marker='_', color=c, s=10)
     ax.set_xlim(0, t_total/t_div)
-    ax.set_ylim(0, N)
+    ax.set_ylim(fr-0.5, max_N)
     ax.set_ylabel('# neuron')
-    ax.set_yticks(np.arange(0, N, max(10, int(N/5))))
-    # ax.spines['right'].set_visible(False)
-    # ax.spines['top'].set_visible(False)
+    ax.set_yticks(np.arange(fr, max_N, max(10, int(max_N/5))))
     
     if x_label is not None:
         ax.set_xlabel(x_label)
