@@ -21,8 +21,8 @@ t_total = 500 * ms
 neuron_1_coords = ColumnCoords(0, 0)
 neuron_2_coords = ColumnCoords(1, 0)
 figure_2_stims = [
-    StimProtocol(neuron_1_coords, StimTime(0*t_stim, t_stim)),
-    StimProtocol(neuron_2_coords, StimTime(t_stim, 2*t_stim)),
+    StimProtocol(neuron_1_coords, StimTime(0*ms, 100*ms)),
+    StimProtocol(neuron_2_coords, StimTime(100*ms, 200*ms)),
     StimProtocol(neuron_1_coords, StimTime(300*ms, 400*ms)),
     StimProtocol(neuron_2_coords, StimTime(300*ms, 400*ms))
 ]
