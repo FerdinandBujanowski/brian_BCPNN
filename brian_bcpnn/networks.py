@@ -16,7 +16,7 @@ class CorticalNetwork():
     def __init__(
             self, N_H, N_M, N_pyr, N_BA, 
             namespace, eqs, filepath=None,
-            n_inc_con=100
+            n_inc_con=100, verbose=True
     ):
 
         self.N_H = N_H
@@ -30,6 +30,8 @@ class CorticalNetwork():
         self.monitors = dict()
         self.inputs = dict()
         self.network = Network()
+
+        self.verbose = verbose
 
         if namespace is not None:
             self.set_namespace(namespace)
@@ -78,7 +80,8 @@ class CorticalNetwork():
         if filepath is not None:
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
-                print(f'Initialising model parameters from file {filepath}')
+                if self.verbose:
+                    print(f'Initialising model parameters from file {filepath}')
                 source_rec = data['S_source']
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
@@ -90,7 +93,8 @@ class CorticalNetwork():
                 self.S_REC.P_syn = data['P_syn']
         else:
             p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
-            print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
+            if self.verbose:
+                print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
 
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr, 
@@ -133,7 +137,8 @@ class CorticalNetwork():
     # and to randomly initialise bigger network using statistics from saved params
     # Note that this only makes sense with networks that haven't yet learned any patterns
     def sample_params(self, filepath):
-        print(f'Sampling parameter values from distributions of file {filepath}.')
+        if self.verbose:
+            print(f'Sampling parameter values from distributions of file {filepath}.')
         with open(filepath, 'rb') as f:
             data = pickle.load(f)
 
@@ -249,11 +254,13 @@ class CorticalNetwork():
         else:
             self.network.run(time)
         current_time = tm.time() - current_time
-        print(f'Total simulation time = {round(current_time, 2)} seconds.')
+        if self.verbose: 
+            print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
     def init_traces(self):
         eps = self.namespace['eps']
-        print(f'Initialising model traces with eps={eps}')
+        if self.verbose:
+            print(f'Initialising model traces with eps={eps}')
         self.REC.set_states({'Z_j': eps, 'E_j': eps, 'P_j': eps})
         self.S_REC.set_states({'Z_i': eps, 'E_i': eps, 'P_i': eps, 'E_syn': eps**2, 'P_syn': eps**2})
 
@@ -365,10 +372,8 @@ class ChrysanthidisNetwork(CorticalNetwork):
 
 class TullyNetwork(CorticalNetwork):
 
-    def __init__(self, namespace=tully_namespace, eqs=tully_equations):
-        super().__init__(2, 1, 1, 0, namespace, eqs)
-
-    # TODO overwrite all functions lol
+    def __init__(self, namespace=tully_namespace, eqs=tully_equations, verbose=True):
+        super().__init__(2, 1, 1, 0, namespace, eqs, verbose=verbose)
 
     # @Override
     def init_poisson(self):
