@@ -1,6 +1,7 @@
 from brian2 import *
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 sys.path.append("./")
 import brian_bcpnn.utils.synapse_utils as sils
@@ -60,8 +61,30 @@ def get_neuron_frequency(spikemon:SpikeMonitor, neuron, t_stop, t_start=0*ms):
 
 def get_spiking_histogram(ax, spikemon, N, t_stop, t_start=0*ms):
     freqs = [get_neuron_frequency(spikemon, i, t_stop, t_start)/Hz for i in range(N)]
-    ax.hist(freqs, bins=5)
+    if ax is not None:
+        ax.hist(freqs, bins=5)
     return freqs
+
+def sliding_window_freq(ax, spikemon, N, t_stop, t_start=0*ms, window_size=100*ms, step_size=50*ms, t_div=second):
+    total_window = t_stop - t_start
+    n_steps = int((total_window-window_size)/step_size+1)
+    freqs = np.zeros(shape=(n_steps, N))
+    x_time = []
+    for step in tqdm(range(n_steps)):
+        current_start = t_start + step*step_size
+        x_time.append(current_start)
+        current_stop = current_start + window_size
+        freqs[step,:] = get_spiking_histogram(ax=None, spikemon=spikemon, N=N, t_start=current_start, t_stop=current_stop)
+
+    freqs_mean = np.mean(freqs, axis=1)
+    # freqs_std = np.std(freqs, axis=1)
+    color = 'b'
+    ax.plot(x_time, freqs_mean, c=color, label='mean')
+    # n_std = 1.96
+    # ax.fill_between(x_time, freqs_mean-n_std*freqs_std, freqs_mean+n_std*freqs_std, alpha=0.3, color=color)
+    ax.set_xlabel(f'Time/{t_div}')
+    ax.set_ylabel('Firing Frequency')
+    ax.legend()
 
 def get_active_freqs_per_batch(
         ax,

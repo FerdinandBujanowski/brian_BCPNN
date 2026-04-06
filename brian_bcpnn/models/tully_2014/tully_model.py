@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append("./")
 
-from parameters import *
+from brian_bcpnn.models.tully_2014.tully_params import *
 from brian_bcpnn.plot import trains, traces
 
-defaultclock.dt = sim_dt
+defaultclock.dt = 0.1*ms
 
 N_total = 3
 
@@ -24,7 +24,7 @@ stimulation_protocol = TimedArray(np.transpose([
 eqs_rec = '''
 # POSTSYNAPTIC (j) TRACES
 dS_j/dt = -S_j/sim_dt : 1
-dZ_j/dt = (S_j/(f_max*t_spike) - Z_j + epsilon*second)/tau_z : 1
+dZ_j/dt = (S_j/(f_max*t_spike) - Z_j + epsilon)/tau_z : 1
 dE_j/dt = (Z_j - E_j)/tau_e : 1
 dP_j/dt = (K*(E_j-P_j))/tau_p : 1
 
@@ -33,22 +33,21 @@ beta = log(clip(P_j, min_num, inf)) : 1
 I_beta = phi*beta : amp
 
 # on-switch
-b_on = stimulation_protocol(t, i) : 1
-I_on = b_on * dI : amp
+b_on = stim_ta(t,i) : 1
+dg_stim/dt = -g_stim/tau_AMPA : siemens
+I_stim = b_on * g_stim * (V_m-E_ex) : amp
 
 # total voltage
 g_ex : siemens # summed over all excitatory synapses
 g_inh : siemens # summed over all inhibitory synapses
-dV/dt = (g_L*(V-E_L)+g_ex*(V-E_ex)+g_inh*(V-E_inh)+I_beta + I_on)/-C_m : volt (unless refractory)
+dV_m/dt = (g_L*(V_m-E_L)+g_ex*(V_m-E_ex)+g_inh*(V_m-E_inh)+I_beta + I_stim)/-C_m : volt (unless refractory)
 '''
 
-REC = NeuronGroup(N_total, model=eqs_rec, method='euler', threshold='V>=V_th', reset='V=V_res', refractory=t_ref)
-REC.V = -70 * mV
+REC = NeuronGroup(N_total, model=eqs_rec, method='euler', threshold='V_m>=V_th', reset='V_m=V_res', refractory=t_ref)
 
 rec_syn_model = '''
 # excitatory/inhibitory conductance
-b_ex : 1 # 1 if synapse is excitatory, 0 if inhibitory
-w_g = w * g_max : siemens # weighted maximum condunctance
+w_g = abs(w) * g_max : siemens # weighted maximum condunctance
 
 dS_ex/dt = -S_ex/tau_ex : 1 (clock-driven) # excitatory conducting window
 dalpha_ex/dt = (S_ex-alpha_ex)/tau_ex : 1  (clock-driven)
@@ -60,7 +59,7 @@ g_inh_post = (1-b_ex) * w_g * alpha_inh : siemens (summed)
 
 # PRESYNAPTIC (i) TRACES
 dS_i/dt = -S_i/sim_dt : 1 (clock-driven)
-dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + epsilon*second)/tau_z : 1 (clock-driven)
+dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + epsilon)/tau_z : 1 (clock-driven)
 dE_i/dt = (Z_i - E_i)/tau_e : 1 (clock-driven)
 dP_i/dt = (K*(E_i-P_i))/tau_p : 1 (clock-driven)
 
@@ -68,6 +67,7 @@ dP_i/dt = (K*(E_i-P_i))/tau_p : 1 (clock-driven)
 dE_syn/dt = (Z_i*Z_j_post - E_syn)/tau_e : 1 (clock-driven)
 dP_syn/dt = (K*(E_syn-P_syn))/tau_p : 1 (clock-driven)
 w = log(clip(P_syn, min_num, inf)/clip(P_i*P_j_post, min_num, inf)) : 1 (constant over dt)
+b_ex : int(w > 0) # 1 if synapse is excitatory, 0 if inhibitory
 '''
 
 rec_syn_on_pre = '''

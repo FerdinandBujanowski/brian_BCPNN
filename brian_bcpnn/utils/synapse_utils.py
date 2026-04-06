@@ -56,6 +56,21 @@ def get_basket_synapses(N_hyper, N_mini, N_pyr, N_basket, cp_PB, cp_BP, symmetry
         return (source_P, target_B, target_B, source_P)
     return (source_P, target_B, source_B, target_P)
 
-# for current_H in range(5):
-#     for current_M in range(2):
-#         print(get_first_pyr(current_H, current_M, 2, 30))
+def get_synapse_index(source, target, source_list, target_list):
+    for i, (s, t) in enumerate(zip(source_list, target_list)):
+        if s == source and t == target:
+            return i
+    return None
+
+def get_synapse_indices(synapse, source_range, target_range):
+    source_list = synapse.i
+    target_list = synapse.j
+
+    indices = []
+    for source in source_range:
+        for target in target_range:
+            syn_i = get_synapse_index(source, target, source_list, target_list)
+            if syn_i is not None:
+                indices.append(syn_i)
+
+    return indices

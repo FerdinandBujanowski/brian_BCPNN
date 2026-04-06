@@ -1,22 +1,5 @@
 from brian2 import *
 
-# print((470*Hz * 0.1*ms))
-
-# p_pos = 470*Hz * 0.1*ms
-# n_step = 10000
-# print(p_pos * n_step)
-# # print(sum([1 if np.random.random() < p_pos else 0 for _ in range(10000)]))
-
-# p_no_pos = 1-p_pos
-# print(p_no_pos**5)
-
-# p_at_least_1_pos = 1-(p_no_pos**5)
-# print(p_at_least_1_pos*n_step)
-# # print(sum([1 if np.random.random() < p_at_least_1_pos else 0 for _ in range(10000)]))
-
-# p_all_neg = p_pos ** 5
-# print(p_all_neg * p_no_pos * n_step)
-
 chr_namespace = {
 # SIMULATION PARAMETERS
 't_sim': 0.1 * ms,
@@ -136,6 +119,9 @@ chr_equations = {
     I_w += b
     S = 1
     ''',
+
+    'threshold_rec': 'V_m>V_peak',
+    'refractory_rec': 'tau_ref',
 
     # BCPNN SYNAPSES
     'bcpnn_syn_model': '''

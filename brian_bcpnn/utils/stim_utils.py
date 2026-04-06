@@ -119,11 +119,12 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
 
     stim_array = np.zeros(shape=(N_H*N_M,n_time_steps),dtype=int32)
     for i, t in enumerate(range(0, int(t_total/ms), int(stim_dt/ms))):
+        print(t)
         for stim in stims:
             if stim.stim_time.t_start/ms <= t and stim.stim_time.t_end/ms > t:
                 stim_array[stim.coords.HC*N_M+stim.coords.MC, i] = 1
 
-    # print(stim_array.T)
+    print(stim_array.T)
     return TimedArray(stim_array.T, dt=stim_dt)
 
 def get_pattern_time_dict(pl:PatternList, stims:list[StimProtocol]) -> dict[str,list[StimTime]]:
