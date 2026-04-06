@@ -31,16 +31,11 @@ model.namespace['stim_ta'] = stils.stim_times_to_timed_array(figure_2_stims, t_t
 
 # MONITORS
 spikemon = model.add_spikemon()
-tracemon = model.add_statemon(variables=model.REC_TRACES+['I_stim', 'V_m'], record=True)
+tracemon = model.add_statemon(variables=model.REC_TRACES, record=True)
 syn_tracemon = model.add_synmon(variables=model.S_REC_TRACES+['w'], record=True)
 
 # SIMULATION
 model.run(t_total)
-
-# PLOT
-# plt.plot(tracemon.t/ms, tracemon.V_m[0]/mV, label='n1')
-# plt.plot(tracemon.t/ms, tracemon.V_m[1]/mV, label='n2')
-# plt.show()
 
 composite.plot_traces(0, 1, spikemon, tracemon, syn_tracemon, model.S_REC, t_div=ms)
 plt.show()
