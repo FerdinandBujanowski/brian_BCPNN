@@ -35,7 +35,8 @@ tully_namespace = {
     # INPUT
     'n_ex': 30, # number of independent poisson processes per neuron
     'w_ex': 10.75 * nS, # weight per process
-    'r_ex': 100 * Hz
+    'r_ex': 30 * Hz, # Poisson input firing rate
+    'tau_input': 0.7 * ms # input EPSP time constant
 
 }
 
@@ -54,8 +55,8 @@ tully_equations = {
 
     # on-switch
     b_on = stim_ta(t,i) : 1
-    dg_stim/dt = -g_stim/tau_ex : siemens
-    dg_alpha/dt = (g_stim-g_alpha)/tau_ex : siemens
+    dg_stim/dt = -g_stim/tau_input : siemens
+    dg_alpha/dt = (g_stim-g_alpha)/tau_input : siemens
     I_stim = b_on * g_stim * (V_m-E_ex) : amp
 
     # total voltage

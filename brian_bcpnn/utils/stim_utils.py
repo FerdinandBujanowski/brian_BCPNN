@@ -115,13 +115,14 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
         mc_list.append(stim.coords.MC)
 
     stim_dt = gcd_list(list(times))*ms
+    # print(stim_dt)
     n_time_steps = int(t_total/stim_dt)
 
     stim_array = np.zeros(shape=(N_H*N_M,n_time_steps),dtype=int32)
-    for i, t in enumerate(range(0, int(t_total/ms), int(stim_dt/ms))):
-        for stim in stims:
-            if stim.stim_time.t_start/ms <= t and stim.stim_time.t_end/ms > t:
-                stim_array[stim.coords.HC*N_M+stim.coords.MC, i] = 1
+    for stim in stims:
+        fr = int(round(stim.stim_time.t_start/stim_dt))
+        to = int(round(stim.stim_time.t_end/stim_dt))
+        stim_array[stim.coords.HC*N_M+stim.coords.MC, fr:to] = 1
 
     # print(stim_array.T)
     return TimedArray(stim_array.T, dt=stim_dt)

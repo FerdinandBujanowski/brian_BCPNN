@@ -21,10 +21,10 @@ t_total = 500 * ms
 neuron_1_coords = ColumnCoords(0, 0)
 neuron_2_coords = ColumnCoords(1, 0)
 figure_2_stims = [
-    StimProtocol(neuron_1_coords, StimTime(0*ms, 100*ms)),
-    StimProtocol(neuron_2_coords, StimTime(100*ms, 200*ms)),
-    StimProtocol(neuron_1_coords, StimTime(300*ms, 400*ms)),
-    StimProtocol(neuron_2_coords, StimTime(300*ms, 400*ms))
+    StimProtocol(neuron_1_coords, StimTime(t_start=0*ms, t_end=100*ms)),
+    StimProtocol(neuron_2_coords, StimTime(t_start=100*ms, t_end=200*ms)),
+    StimProtocol(neuron_1_coords, StimTime(t_start=300*ms, t_end=400*ms)),
+    StimProtocol(neuron_2_coords, StimTime(t_start=300*ms, t_end=400*ms))
 ]
 
 model.namespace['stim_ta'] = stils.stim_times_to_timed_array(figure_2_stims, t_total, model.N_H, model.N_M)
