@@ -41,7 +41,7 @@ w_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 # REPEATED SIMULATION
 for i in tqdm(range(n_iterations)):
     model = TullyNetwork(verbose=False)
-    model.namespace['tau_p'] = NEW_TAU_P
+    model.namespace['tau_p'] = NEW_TAU_P #global overwriting
     model.namespace['stim_ta'] = timed_array
 
     # MONITORS

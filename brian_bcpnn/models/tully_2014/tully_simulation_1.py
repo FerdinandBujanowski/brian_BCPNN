@@ -12,6 +12,7 @@ import brian_bcpnn.utils.synapse_utils as syls
 model = TullyNetwork()
 
 namespace = model.namespace
+
 defaultclock.dt = namespace['sim_dt']
 
 t_stim = 100 * ms
@@ -21,7 +22,7 @@ t_total = 500 * ms
 neuron_1_coords = ColumnCoords(0, 0)
 neuron_2_coords = ColumnCoords(1, 0)
 figure_2_stims = [
-    StimProtocol(neuron_1_coords, StimTime(t_start=0*ms, t_end=100*ms)),
+    StimProtocol(neuron_1_coords, StimTime(t_start=0*ms, t_end=100*ms)), #pre-syn neuron
     StimProtocol(neuron_2_coords, StimTime(t_start=100*ms, t_end=200*ms)),
     StimProtocol(neuron_1_coords, StimTime(t_start=300*ms, t_end=400*ms)),
     StimProtocol(neuron_2_coords, StimTime(t_start=300*ms, t_end=400*ms))
