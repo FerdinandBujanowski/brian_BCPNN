@@ -23,7 +23,7 @@ tully_namespace = {
     'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
     #'epsilon': 0.0001, # min bcpnn probability
-    'epsilon': 0.013, #1/(29*Hz * 3000*ms)
+    'epsilon': 0.013, #1/(29*Hz * 3000*ms). Before: 0.0001, # min bcpnn probability
     't_spike': 0.1 * ms, # spike duration
 
     # SYNAPSE MODEL

@@ -22,10 +22,10 @@ def gcd_list(l, o=None):
 
 @dataclass
 class ColumnCoords:
-    HC: int
+    HC: int # attributes ? instances ?
     MC: int
     def __str__(self):
-        return f'[{self.HC};{self.MC}]'
+        return f'[{self.HC};{self.MC}]' # constructor? method?
 @dataclass
 class StimTime:
     t_start: Quantity # in ms
@@ -42,6 +42,7 @@ class StimProtocol:
     stim_time: StimTime
     def __str__(self):
         return f'({str(self.coords)}, {str(self.stim_time)})'
+        # returns either (0,0) or (1,0) for my model 
 @dataclass
 class Pattern:
     coord_list: list[ColumnCoords]
