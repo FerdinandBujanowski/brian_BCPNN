@@ -18,7 +18,7 @@ class CorticalNetwork():
             namespace, eqs, filepath=None,
             n_inc_con=100, verbose=True
     ):
-
+        
         self.N_H = N_H
         self.N_M = N_M
         self.N_pyr = N_pyr
@@ -370,7 +370,7 @@ class ChrysanthidisNetwork(CorticalNetwork):
         self.REC.b_on[:] = b_on_array
         return b_on_array
 
-class TullyNetwork(CorticalNetwork):
+class TullyNetwork(CorticalNetwork): #subclass of superclass CorticalNetwork
 
     def __init__(self, namespace=tully_namespace, eqs=tully_equations, verbose=True):
         super().__init__(2, 1, 1, 0, namespace, eqs, verbose=verbose)
@@ -380,7 +380,7 @@ class TullyNetwork(CorticalNetwork):
         stim_input = PoissonInput(target=self.REC, target_var='g_stim', N=self.namespace['n_ex'], rate=self.namespace['r_ex'], weight=self.namespace['w_ex'])
         self.add_poisson(stim_input, 'stim_input')
     
-    # @Override
+    # @Override 
     def init_s_rec(self, eqs, _):
         # RECURRENT LAYER BCPNN SYNAPSES
         self.S_REC = Synapses(

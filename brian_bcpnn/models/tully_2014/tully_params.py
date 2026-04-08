@@ -13,16 +13,17 @@ tully_namespace = {
     't_ref': 2 * ms, # refractory period
     'sim_dt': 0.1 * ms, # time resolution
 
-    'min_num': 10e-10, # minimum float value
-    'dI': -0.3 * nA, # external current
+  #  'min_num': 10e-10, # minimum float value
+  #  'dI': -0.2 * nA, # external current
 
     # CHANNEL MODEL
     'tau_z': 10 * ms, # Z trace time constant
     'tau_e': 100 * ms, # E trace time constant
-    'tau_p': 3000 * ms, # P trace time constant
-    'f_max': 20 * Hz, # highest firing rate
+    'tau_p': 2500 * ms, # P trace time constant
+    'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
-    'epsilon': 0.0001, # min bcpnn probability
+    #'epsilon': 0.0001, # min bcpnn probability
+    'epsilon': 0.013, #1/(29*Hz * 3000*ms)
     't_spike': 0.1 * ms, # spike duration
 
     # SYNAPSE MODEL
@@ -35,8 +36,11 @@ tully_namespace = {
     # INPUT
     'n_ex': 30, # number of independent poisson processes per neuron
     'w_ex': 10.75 * nS, # weight per process
-    'r_ex': 30 * Hz, # Poisson input firing rate
-    'tau_input': 0.7 * ms # input EPSP time constant
+    'r_ex': 29 * Hz, # Poisson input firing rate, 0 < r_ex < f_max
+    'tau_input': 0.7 * ms # input EPSP time constant, 0.7 ms. 
+    # EPSP : excitatory presynaptic potential.
+
+# can change: poisson input or conductance of input, time constant
 
 }
 
