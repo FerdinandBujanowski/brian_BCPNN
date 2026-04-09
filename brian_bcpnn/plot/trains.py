@@ -28,7 +28,7 @@ def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr
 
 def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t_div=ms):
     spike_trains = spikemon.spike_trains()
-    train_a = spike_trains[n_a]
+    train_a = spike_trains[n_a] # exact spike times
     train_b = spike_trains[n_b]
     for train, c in zip([train_a, train_b], [c_a, c_b]):
         t=[0]

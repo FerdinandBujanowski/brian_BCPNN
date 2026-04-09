@@ -19,6 +19,7 @@ t_stim = t_total/50
 n_iterations = 10 #can I try changing this?
 t_array = None
 w_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
+w1_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 beta_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 # print(w_array.shape)
 
@@ -53,6 +54,8 @@ for i in tqdm(range(n_iterations)):
 
     # MONITORS
     weightmon = model.add_synmon(variables=['w'], record=True)
+    weightmon2 = model.add_synmon(variables=['w'], record=True) #change to =1 if only want postsynaptic
+    # model.add_monitor / statemon ?
     spikemon = model.add_spikemon()
     biasmon = StateMonitor(source=model.REC, variables = ['beta'], record=1) #record = 1 does so only the 2nd (postsynaptic) neuron is registered?
     # TODO add statemon for bias
@@ -61,7 +64,11 @@ for i in tqdm(range(n_iterations)):
 
     w_array[i,:] = weightmon.w[0]
     if t_array is None:
-        t_array = weightmon.t/model.namespace['tau_p']
+        t_array = weightmon.t/model.namespace['tau_p'] #x-axis: time divided by tau_p
+
+    w1_array[i,:] = weightmon.w[0]
+    if t_array is None:
+        t_array = weightmon.t #plot only time on x axis and not divided by tau_p
 
     beta_array[i,:] = biasmon.beta[0]
     if beta_array is None:
@@ -77,19 +84,26 @@ w_mean = np.mean(w_array, axis=0)
 w_std = np.std(w_array, axis=0)
 n_std = 1.96
 
+w1_mean = np.mean(w1_array, axis=0)
+
 beta_mean = np.mean(beta_array, axis=0)
 beta_std = np.std(beta_array, axis=0)
 
 # ax1 is spikemonitor (?)
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, sharex=True)
 trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
 
 ax2.plot(t_array, w_mean, color='c', label='mean')
-ax2.fill_between(t_array, w_mean-n_std*w_std, w_mean+n_std*w_std, color='b', alpha=0.3, label='95%')
+ax2.fill_between(t_array, w_mean-n_std*w_std, w_mean+n_std*w_std, color='c', alpha=0.3, label='95%')
 
 ax3.plot(t_array, beta_mean, color='m', label='mean')
-ax3.fill_between(t_array, beta_mean-n_std*beta_std, beta_mean+n_std*beta_std, color='b', alpha=0.3, label='95')
+ax3.fill_between(t_array, beta_mean-n_std*beta_std, beta_mean+n_std*beta_std, color='m', alpha=0.3, label='95')
+
+# do for ax4 delta weight change. so w_2 - w_1 . How to plot delta weight change?
+ax4.plot(t_array, w1_mean, color='c', label='mean')
+# no fill between needed?
+
 
 ax2.set_ylabel('weight_{ij}')
 ax2.set_xlabel('t/tau_p')
@@ -100,4 +114,14 @@ ax3.set_ylabel('Bias')
 ax3.set_xlabel('t/tau_p')
 ax3.grid()
 ax3.legend()
-plt.show()
+
+ax4.set_ylabel('weight')
+ax3.set_xlabel('time t')
+ax3.grid()
+ax3.legend()
+
+plt.show() #creates new plot window 
+
+
+
+

@@ -19,7 +19,7 @@ tully_namespace = {
     # CHANNEL MODEL
     'tau_z': 10 * ms, # Z trace time constant
     'tau_e': 100 * ms, # E trace time constant
-    'tau_p': 2500 * ms, # P trace time constant
+    'tau_p': 3000 * ms, # P trace time constant
     'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
     #'epsilon': 0.0001, # min bcpnn probability
