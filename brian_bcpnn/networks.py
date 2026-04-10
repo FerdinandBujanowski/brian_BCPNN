@@ -11,11 +11,14 @@ import brian_bcpnn.utils.synapse_utils as syls
 import brian_bcpnn.utils.stim_utils as stils
 from brian_bcpnn.utils.stim_utils import Pattern, ColumnCoords
 
+MAX_PYR = 30
+MAX_BA = 4
+
 class CorticalNetwork():
 
     def __init__(
-            self, N_H, N_M, N_pyr, N_BA, 
-            namespace, eqs, filepath=None,
+            self, N_H, N_M, N_pyr=MAX_PYR, N_BA=MAX_BA, 
+            namespace=None, eqs=None, filepath=None,
             n_inc_con=100, verbose=True
     ):
 
