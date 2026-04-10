@@ -51,8 +51,8 @@ def activation_lists(N):
     #print(S_post[40:50])
     return S_pre, S_post
 
-S = activation_lists(10)
-print(S)
+#S = activation_lists(10)
+#print(S)
 
 #S_pre, S_post = activation_lists(10)
 
