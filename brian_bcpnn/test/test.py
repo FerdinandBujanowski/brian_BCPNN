@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append('./')
 from brian_bcpnn.models.tully_2014.tully_params import *
 
 test_array = np.zeros(shape=(3, 4))
