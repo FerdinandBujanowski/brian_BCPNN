@@ -13,7 +13,7 @@ import brian_bcpnn.utils.synapse_utils as syls
 # prefs.codegen.loop_invariant_optimisations = False
 # np.seterr(all='raise')
 
-N_H = 5
+N_H = 10
 N_M = 2
 N_pyr = 30
 N_BA = 4
@@ -59,8 +59,10 @@ synmon_mc_2 = StateMonitor(
 )
 # TODO create add_tracemonitor method in network class or TraceMonitor subclass of StateMonitor
 tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[same_j, diff_j])
-syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=syls.get_synapse_indices(model.S_REC, [same_i], [same_j]))
-syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=syls.get_synapse_indices(model.S_REC, [diff_i], [diff_j]))
+syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[same_i, same_j])
+syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[diff_i, diff_j])
+# syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=syls.get_synapse_indices(model.S_REC, [same_i], [same_j]))
+# syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=syls.get_synapse_indices(model.S_REC, [diff_i], [diff_j]))
 
 # bias state monitors
 recorded_biases = np.ndarray.flatten(np.array([mc_range_j1, mc_range_j2]))
