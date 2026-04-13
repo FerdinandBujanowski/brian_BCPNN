@@ -13,7 +13,7 @@ import brian_bcpnn.utils.synapse_utils as syls
 # prefs.codegen.loop_invariant_optimisations = False
 # np.seterr(all='raise')
 
-N_H = 1
+N_H = 10
 N_M = 2
 N_pyr = 30
 N_BA = 4
