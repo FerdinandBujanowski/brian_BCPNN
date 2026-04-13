@@ -5,9 +5,9 @@
 # --> Save all relevant network parameters (including connectivity) to file
 
 from brian2 import *
-import brian2cuda
-set_device("cuda_standalone")
-brian2cuda.example_run()
+# import brian2cuda
+# set_device("cuda_standalone")
+# brian2cuda.example_run()
 
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
