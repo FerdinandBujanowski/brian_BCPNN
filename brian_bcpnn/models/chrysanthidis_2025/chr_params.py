@@ -85,12 +85,12 @@ chr_equations = {
     g_NMDA : siemens # SUM OVER ALL SYNAPSES
     I_NMDA = g_NMDA * (V_m - E_NMDA) : amp 
     g_GABA : siemens # SUM OVER ALL SYNAPSES
-    dg_BA/dt = -g_BA/tau_GABA : siemens # inh current from basket cells
+    dg_BA/dt = -g_BA/tau_GABA : siemens
     I_GABA = (g_GABA+g_BA) * (V_m - E_GABA) : amp 
     I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
     # BETA CURRENT -----------------------------------
-    beta = log(P_j) : 1
+    beta = log(P) : 1
     I_beta = beta_gain * beta : amp
 
     # EXTERNAL CURRENT -------------------------------
@@ -108,10 +108,10 @@ chr_equations = {
     # SPIKE TRAIN ------------------------------------
     dS/dt = -S/t_sim : 1
 
-    # POSTSYNAPTIC (j) TRACES ------------------------
-    dZ_j/dt = (S/(f_max*t_spike) - Z_j + eps)/tau_z_j : 1
-    dE_j/dt = (Z_j-E_j)/tau_e : 1
-    dP_j/dt = K*(E_j-P_j)/tau_p : 1
+    # TRACES -----------------------------------------
+    dZ/dt = (S/(f_max*t_spike) - Z + eps)/tau_z_j : 1
+    dE/dt = (Z-E)/tau_e : 1
+    dP/dt = K*(E-P)/tau_p : 1
     ''',
 
     'reset_rec': '''
@@ -126,15 +126,15 @@ chr_equations = {
     # BCPNN SYNAPSES
     'bcpnn_syn_model': '''
     # PRESYNAPTIC (i) TRACES -------------------------
-    dS_i/dt = -S_i/t_sim : 1 (clock-driven)
-    dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + eps)/tau_z_i : 1 (clock-driven)
-    dE_i/dt = (Z_i-E_i)/tau_e : 1 (clock-driven)
-    dP_i/dt = K*(E_i-P_i)/tau_p : 1 (clock-driven)
+    # dS_i/dt = -S_i/t_sim : 1 (clock-driven)
+    # dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + eps)/tau_z_i : 1 (clock-driven)
+    # dE_i/dt = (Z_i-E_i)/tau_e : 1 (clock-driven)
+    # dP_i/dt = K*(E_i-P_i)/tau_p : 1 (clock-driven)
 
     # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_i*Z_j_post-E_syn)/tau_e : 1 (clock-driven)
+    dE_syn/dt = (Z_pre*Z_post-E_syn)/tau_e : 1 (clock-driven)
     dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
-    w = (1-w_init)*log(P_syn/(P_i*P_j_post)) : 1 (constant over dt)
+    w = (1-w_init)*log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
     dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
     # CONDUCTANCES -----------------------------------
@@ -154,7 +154,6 @@ chr_equations = {
     ''',
 
     'bcpnn_syn_on_pre': '''
-    S_i = 1
     H_AMPA = 1
     H_NMDA = 1
     H_GABA = 1

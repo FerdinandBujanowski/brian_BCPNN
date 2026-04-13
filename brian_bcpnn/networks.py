@@ -39,8 +39,8 @@ class CorticalNetwork():
         if namespace is not None:
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
-        self.REC_TRACES = ['Z_j', 'E_j', 'P_j']
-        self.S_REC_TRACES = ['Z_i', 'E_i', 'P_i', 'E_syn', 'P_syn']
+        self.REC_TRACES = ['Z', 'E', 'P']
+        self.S_REC_TRACES = ['E_syn', 'P_syn']
 
         self.init_rec(eqs, filepath)
 
@@ -65,9 +65,9 @@ class CorticalNetwork():
                 self.REC.V_m = data['V_m']*mV
                 # I_w TODO compare if this is necessary
                 self.REC.I_w = data['I_w']*nA
-                self.REC.Z_j = data['Z_j']
-                self.REC.E_j = data['E_j']
-                self.REC.P_j = data['P_j']
+                self.REC.Z = data['Z']
+                self.REC.E = data['E']
+                self.REC.P = data['P']
         else:
             self.REC.V_m = self.namespace['E_L']
 
@@ -89,9 +89,9 @@ class CorticalNetwork():
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
 
-                self.S_REC.Z_i = data['Z_i']
-                self.S_REC.E_i = data['E_i']
-                self.S_REC.P_i = data['P_i']
+                # self.S_REC.Z = data['Z']
+                # self.S_REC.E = data['E']
+                # self.S_REC.P = data['P']
                 self.S_REC.E_syn = data['E_syn']
                 self.S_REC.P_syn = data['P_syn']
         else:
@@ -264,8 +264,8 @@ class CorticalNetwork():
         eps = self.namespace['eps']
         if self.verbose:
             print(f'Initialising model traces with eps={eps}')
-        self.REC.set_states({'Z_j': eps, 'E_j': eps, 'P_j': eps})
-        self.S_REC.set_states({'Z_i': eps, 'E_i': eps, 'P_i': eps, 'E_syn': eps**2, 'P_syn': eps**2})
+        self.REC.set_states({'Z': eps, 'E': eps, 'P': eps})
+        self.S_REC.set_states({'E_syn': eps**2, 'P_syn': eps**2})
 
     def save_traces(self, path):
         data = dict()
@@ -276,22 +276,22 @@ class CorticalNetwork():
         # I_w TODO compare if this is necessary
         data['I_w'] = self.REC.I_w/nA
         # Z_j
-        data['Z_j'] = self.REC.Z_j/1
+        data['Z'] = self.REC.Z/1
         # E_j
-        data['E_j'] = self.REC.E_j/1
+        data['E'] = self.REC.E/1
         # P_j
-        data['P_j'] = self.REC.P_j/1
+        data['P'] = self.REC.P/1
 
         # S_REC Synapses
         # connection
         data['S_source'] = np.array(self.S_REC.i)
         data['S_target'] = np.array(self.S_REC.j)
         # Z_i
-        data['Z_i'] = self.S_REC.Z_i/1
-        # E_i
-        data['E_i'] = self.S_REC.E_i/1
-        # P_i
-        data['P_i'] = self.S_REC.P_i/1
+        # data['Z_i'] = self.S_REC.Z_i/1
+        # # E_i
+        # data['E_i'] = self.S_REC.E_i/1
+        # # P_i
+        # data['P_i'] = self.S_REC.P_i/1
         # E_syn
         data['E_syn'] = self.S_REC.E_syn/1
         # P_syn
