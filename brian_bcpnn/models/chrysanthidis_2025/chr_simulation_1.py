@@ -19,4 +19,4 @@ N_M = 2
 N_BA = 4
 N_PYR = 30
 model = ChrysanthidisNetwork(N_H, N_M, N_PYR, N_BA, namespace=chr_namespace)
-init_network_params(model, f'./brian_bcpnn/data/chr/stable_init_{N_H}_{N_M}_{N_PYR}.data')
+init_network_params(model, f'./data/chr/stable_init_{N_H}_{N_M}_{N_PYR}.data')
