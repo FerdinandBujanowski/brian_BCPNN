@@ -5,6 +5,9 @@
 # --> Save all relevant network parameters (including connectivity) to file
 
 from brian2 import *
+import brian2cuda
+set_device("cuda_standalone")
+
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
@@ -15,4 +18,4 @@ N_M = 2
 N_BA = 4
 N_PYR = 30
 model = ChrysanthidisNetwork(N_H, N_M, N_PYR, N_BA, namespace=chr_namespace)
-init_network_params(model, f'data/chr/stable_init_{N_H}_{N_M}_{N_PYR}.data')
+init_network_params(model, f'./data/chr/stable_init_{N_H}_{N_M}_{N_PYR}.data')
