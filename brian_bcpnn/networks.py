@@ -40,7 +40,7 @@ class CorticalNetwork():
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
         self.REC_TRACES = ['Z', 'E', 'P']
-        self.S_REC_TRACES = ['Z', 'E', 'P', 'E_syn', 'P_syn']
+        self.S_REC_TRACES = ['E_syn', 'P_syn']
 
         self.init_rec(eqs, filepath)
 
@@ -89,9 +89,9 @@ class CorticalNetwork():
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
 
-                self.S_REC.Z_i = data['Z_i']
-                self.S_REC.E_i = data['E_i']
-                self.S_REC.P_i = data['P_i']
+                # self.S_REC.Z = data['Z']
+                # self.S_REC.E = data['E']
+                # self.S_REC.P = data['P']
                 self.S_REC.E_syn = data['E_syn']
                 self.S_REC.P_syn = data['P_syn']
         else:

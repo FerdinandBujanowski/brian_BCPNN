@@ -13,7 +13,7 @@ def plot_traces(
 
     trains.compare_two_trains(ax1, spikemon, i, j, t_div=t_div)
 
-    traces.plot_z_traces(ax2, statemon, synmon, synapse, i, j, t_div=t_div)
+    traces.plot_z_traces(ax2, statemon, i, j, t_div=t_div)
 
     traces.plot_e_traces(ax3, statemon, synmon, synapse, i, j, t_div=t_div)
 

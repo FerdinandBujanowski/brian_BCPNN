@@ -18,11 +18,13 @@ N_M = 2
 N_pyr = 30
 N_BA = 4
 N_poisson = 1
-N_batches = 2
+N_batches = 10
 
+suffix = f'{N_H}_{N_M}_{N_pyr}'
+filename = 'stable_init_' + suffix + '.data'
 model = ChrysanthidisNetwork(
     N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, 
-    filepath=f'brian_bcpnn/data/chr/stable_init_eps_{N_H}.data', N_poisson=N_poisson
+    filepath='./data/chr/'+filename, N_poisson=N_poisson
 )
 
 # TEST: init 10x2x30 model by sampling traces and weights from 5x2x30 model
@@ -58,7 +60,7 @@ synmon_mc_2 = StateMonitor(
     record=model.S_REC[min(mc_range_i):max(mc_range_i)+1,min(mc_range_j2):max(mc_range_j2)+1]
 )
 # TODO create add_tracemonitor method in network class or TraceMonitor subclass of StateMonitor
-tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[same_j, diff_j])
+tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[same_i, diff_i, same_j, diff_j])
 syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[same_i, same_j])
 syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=model.S_REC[diff_i, diff_j])
 # syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=syls.get_synapse_indices(model.S_REC, [same_i], [same_j]))
@@ -103,7 +105,7 @@ pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 # for key in pt_dict.keys():
 #     print(f'[{key}]: {[str(i) for i in pt_dict[key]]}')
 
-# model.save_traces(f'data/chr/trained/trained_{N_H}_hc_{N_poisson}_p.data')
+model.save_traces('./data/chr/trained/trained_' + suffix + '.data')
 
 # PLOTS
 for n_pattern in [0, 1]:
@@ -116,6 +118,7 @@ for n_pattern in [0, 1]:
     plt.ylabel('Spiking Frequency')
     plt.title(f'Pattern {n_pattern+1}')
     plt.show()
+    # plt.savefig(f'./figs/freqs_pattern_{n_pattern}' + suffix + '.png')
 
 composite.plot_training_protocol(
     model, basmon, spikemon,
@@ -126,6 +129,7 @@ composite.plot_training_protocol(
     N_batches, t_total, t_div=second,
     pt_dict=pt_dict
 )
+plt.savefig(f'./figs/training_protocol_' + suffix + '.png')
 plt.show()
 
 composite.plot_bias_trajectory(
