@@ -124,7 +124,8 @@ ax3.legend()
 plt.show() #creates new plot window
 # I can now use ax1, etc for new plots after plt.show()
 
-# zero presynaptic, one postsynaptic
+
+# 0 presynaptic, 1 postsynaptic
 
 def spike_timing_func(train_0, train_1):
     spike_indices = []
@@ -146,52 +147,66 @@ def spike_timing_func(train_0, train_1):
                     j+=1
     return spike_indices, spike_times
 
-
-#train_0, train_1 = trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
-#print(train_0, train_1)
-spike_trains = spikemon.spike_trains()
-train_0 = spike_trains[0] # exact spike times presyn
-train_1 = spike_trains[1] #post
-s_indice, s_times = spike_timing_func(train_0, train_1)
-print('first list: ', s_indice) #returns list of 0s and 1s, the pre and post spiking. 
-#print('second list', s_times)
+# spike_times[i] - spike_times[i+1] if spike_indice[i] == 1
+# spike_times[i+1] - spike_times[i] if spike_indice[i] == 0
 
 
-# we only want times for pre-post or post-pre
+#spike timing intervals calculated as time(post) - time(pre)
 
-def ltp_ltd_func(l_ind, s_times):
+# we only want times for pre-post or post-pre !! (Reason for if-statement here)
+
+def ltp_ltd_func(l_ind, s_times): #l_ind = list of spike indices
     t_int_list = [] #time intervals list
-    wchange_list = [] #weight change list 
-    for i in range(len(l_ind)):
+    wchange_list = [] #weight change list, will be returned in (%)
+    for i in range(len(l_ind)-1):
         if l_ind[i] != l_ind[i+1]: #if two following elem not the same
             #only interested in cases 0,1 or 1,0 
             pre_ind = i if l_ind[i]==0 else i+1  #index of presynaptic neuron
             post_ind = i if l_ind[i]==1 else i+1 #index of postsynaptic neuron
             t_int_list.append(s_times[post_ind] - s_times[pre_ind]) #time intervals given by time of post minus time of pre
             # because post-pre spiking should give negative value and pre-post positive value (look at picture)
-            pre_w = weightmon[0][int(s_times[pre_ind]/dt)] #the weight at specific spike time of pre divided by timestep dt 
-            post_w = weightmon[0][int(s_times[post_ind]/dt)] #same but for post
+            pre_w = w_array[n_iterations-1][int(s_times[pre_ind]/dt)] #the weight at specific spike time of pre divided by timestep dt 
+            post_w = w_array[n_iterations-1][int(s_times[post_ind]/dt)] #the weight at specific spike time of post divided by timestep dt 
+            #divide by 0.1 (dt) and take as integer 
 
-            # ARE EITHER OF THESE OR THE BELOW CORRECT?? WHAT IS THIS?
-
-            wchange_pre = (pre_w[i+1] - pre_w[i])/pre_w[i] * 100
-            wchange_post = (post_w[i+1] - post_w[i])/post_w[i] * 100
-
-            wchange = ((post_w - pre_w)/pre_w) * 100 # i do not think this is correct
+            # I want to calculate the synaptic weight difference (in %)
+            
+            wchange = ((post_w - pre_w)/pre_w) * 100 # is this correct?
             wchange_list.append(wchange)
+    return t_int_list, wchange_list
 
-
+#-------
+            # ARE EITHER OF THESE OR THE BELOW CORRECT?? WHAT IS THIS?      
          #   (post_w - pre_w)/pre_w x 100 = 
-         #   (pre_w - post_w)/post_w x 100 = 
+          #  wchange_pre = (pre_w[i+1] - pre_w[i])/pre_w[i] * 100
+          #  wchange_post = (post_w[i+1] - post_w[i])/post_w[i] * 100
 
 
-# do I have to care about this now? 
 
 
-ltp_ltd_func(s_indice, s_times)
+#train_0, train_1 = trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
+#print(train_0, train_1)
+spike_trains = spikemon.spike_trains()
+train_0 = spike_trains[0] # exact spike times presyn
+train_1 = spike_trains[1] # exact spike times postsyn
+s_indice, s_times = spike_timing_func(train_0, train_1)
+#print('first list: ', s_indice) #returns list of 0s and 1s, the pre and post spiking. 
+#print('second list', s_times)
+
+t_int_list, wchange_list = ltp_ltd_func(s_indice, s_times)
+
+plt.xlim(-15, 15)
+plt.ylim(-1.0, 1.0)
+plt.legend
+plt.scatter(t_int_list/ms, wchange_list, alpha=0.5) #alpha changes the transparency 
+plt.grid()
+plt.show()
 
 
-# now plot the time differences (so neg and pos I guess?) and the weights from weightmon? 
-# i do not remember what to do with the weight??
+#-TODO
+# plot these together - see if as in STDP
+# clean up code & comment 
+# split into pos and neg lists to make them different colors 
 
-#divide by 0.1 (dt?) and take as integer 
+
+
