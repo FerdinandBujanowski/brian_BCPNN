@@ -14,7 +14,7 @@ from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
 from brian_bcpnn.stim_protocols.init_params import init_network_params
 
-N_H = 1
+N_H = 10
 N_M = 2
 N_BA = 4
 N_PYR = 30
