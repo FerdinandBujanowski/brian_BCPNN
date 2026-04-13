@@ -30,7 +30,7 @@ def init_network_params(model, filepath):
     no_stim = []
     namespace['tau_init'] = 7.5 * second * (MAX_PYR / model.N_pyr)
     t_total = 3*namespace['tau_init']
-    print(f'Simulating for {t_total} (tau_init={namespace['tau_init']})')
+    print(f'Simulating for {t_total} (tau_init={namespace["tau_init"]})')
     model.namespace['stim_ta'] = stils.stim_times_to_timed_array(no_stim, t_total, model.N_H, model.N_M)
     
     # initialize p-traces and run without plasticity
