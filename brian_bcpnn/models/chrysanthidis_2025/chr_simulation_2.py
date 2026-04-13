@@ -13,7 +13,7 @@ import brian_bcpnn.utils.synapse_utils as syls
 # prefs.codegen.loop_invariant_optimisations = False
 # np.seterr(all='raise')
 
-N_H = 10
+N_H = 1
 N_M = 2
 N_pyr = 30
 N_BA = 4
@@ -22,7 +22,7 @@ N_batches = 2
 
 model = ChrysanthidisNetwork(
     N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, 
-    filepath=f'data/chr/stable_init_eps_{N_H}.data', N_poisson=N_poisson
+    filepath=f'brian_bcpnn/data/chr/stable_init_eps_{N_H}.data', N_poisson=N_poisson
 )
 
 # TEST: init 10x2x30 model by sampling traces and weights from 5x2x30 model
