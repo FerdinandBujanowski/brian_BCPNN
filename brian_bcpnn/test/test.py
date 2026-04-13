@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append('./')
 print(sys.path)
 from brian_bcpnn.models.tully_2014.tully_params import *
 
