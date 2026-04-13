@@ -137,6 +137,7 @@ composite.plot_bias_trajectory(
     [np.array(mc_range_j1), np.array(mc_range_j2)], 
     t_total, second, pt_dict
 )
+plt.savefig(f'./figs/bias_' + suffix + '.png')
 plt.show()
 
 ax4 = composite.plot_traces(
@@ -144,6 +145,7 @@ ax4 = composite.plot_traces(
     spikemon, tracemon, syn_tracemon_s1, model.S_REC,
     t_div=second
 )
+plt.savefig(f'./figs/traces_coactive_' + suffix + '.png')
 plt.show()
 
 ax5 = composite.plot_traces(
@@ -151,9 +153,11 @@ ax5 = composite.plot_traces(
     spikemon, tracemon, syn_tracemon_s2, model.S_REC,
     t_div=second
 )
+plt.savefig(f'./figs/traces_competing_' + suffix + '.png')
 plt.show()
 
 fig, ax = plt.subplots()
 im = synapses.plot_weights(ax, model.S_REC, model.N)
 fig.colorbar(im, ax=ax)
+plt.savefig(f'./figs/weight_matrix_' + suffix + '.png')
 plt.show()
