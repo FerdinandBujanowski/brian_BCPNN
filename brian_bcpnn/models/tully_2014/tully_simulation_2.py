@@ -12,7 +12,8 @@ import brian_bcpnn.utils.synapse_utils as syls
 from activation_patterns import activation_lists
 
 NEW_TAU_P = 3*second # 3 000 ms 
-defaultclock.dt = 0.1 * ms
+dt = 0.1 * ms
+defaultclock.dt = dt
 t_total = 10*NEW_TAU_P # 10 * tau_p 
 t_stim = t_total/50
         
@@ -120,8 +121,7 @@ ax3.set_xlabel('time t')
 ax3.grid()
 ax3.legend()
 
-plt.show() #creates new plot window 
-print('test')
+plt.show() #creates new plot window
 # I can now use ax1, etc for new plots after plt.show()
 
 # zero presynaptic, one postsynaptic
@@ -131,22 +131,21 @@ def spike_timing_func(train_0, train_1):
     spike_times = []
     i = 0
     j = 0
-    while i < len(train_0):
-        while j < len(train_1):
-            if train_0[i] < train_1[j]:
-                spike_indices.append(0)
-                spike_times.append(train_0[i])
-                i+=1
-            if train_0[i] > train_1[j]:
-                spike_indices.append(1)
-                spike_times.append(train_1[j])
-                j+=1
-            else: continue
+    while i < len(train_0) or j < len(train_1):
+        i_done = i >= len(train_0)
+        j_done = j >= len(train_1)
+        if not i_done:
+                if j_done or train_0[i] <= train_1[j]:
+                    spike_indices.append(0)
+                    spike_times.append(train_0[i])
+                    i+=1
+        if not j_done:
+                if i_done or train_1[j] <= train_0[i]:
+                    spike_indices.append(1)
+                    spike_times.append(train_1[j])
+                    j+=1
     return spike_indices, spike_times
 
-#divide by 0.1 (dt?) and take as integer 
-
-#ltd_ltp_func later
 
 #train_0, train_1 = trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
 #print(train_0, train_1)
@@ -154,10 +153,45 @@ spike_trains = spikemon.spike_trains()
 train_0 = spike_trains[0] # exact spike times presyn
 train_1 = spike_trains[1] #post
 s_indice, s_times = spike_timing_func(train_0, train_1)
-print('first list: ', s_indice)
-print('second list', s_times)
+print('first list: ', s_indice) #returns list of 0s and 1s, the pre and post spiking. 
+#print('second list', s_times)
+
+
+# we only want times for pre-post or post-pre
+
+def ltp_ltd_func(l_ind, s_times):
+    t_int_list = [] #time intervals list
+    wchange_list = [] #weight change list 
+    for i in range(len(l_ind)):
+        if l_ind[i] != l_ind[i+1]: #if two following elem not the same
+            #only interested in cases 0,1 or 1,0 
+            pre_ind = i if l_ind[i]==0 else i+1  #index of presynaptic neuron
+            post_ind = i if l_ind[i]==1 else i+1 #index of postsynaptic neuron
+            t_int_list.append(s_times[post_ind] - s_times[pre_ind]) #time intervals given by time of post minus time of pre
+            # because post-pre spiking should give negative value and pre-post positive value (look at picture)
+            pre_w = weightmon[0][int(s_times[pre_ind]/dt)] #the weight at specific spike time of pre divided by timestep dt 
+            post_w = weightmon[0][int(s_times[post_ind]/dt)] #same but for post
+
+            # ARE EITHER OF THESE OR THE BELOW CORRECT?? WHAT IS THIS?
+
+            wchange_pre = (pre_w[i+1] - pre_w[i])/pre_w[i] * 100
+            wchange_post = (post_w[i+1] - post_w[i])/post_w[i] * 100
+
+            wchange = ((post_w - pre_w)/pre_w) * 100 # i do not think this is correct
+            wchange_list.append(wchange)
+
+
+         #   (post_w - pre_w)/pre_w x 100 = 
+         #   (pre_w - post_w)/post_w x 100 = 
+
+
+# do I have to care about this now? 
+
+
+ltp_ltd_func(s_indice, s_times)
+
 
 # now plot the time differences (so neg and pos I guess?) and the weights from weightmon? 
-
-
 # i do not remember what to do with the weight??
+
+#divide by 0.1 (dt?) and take as integer 

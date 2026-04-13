@@ -40,13 +40,7 @@ def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t
                 s.append(s_i)
         ax.plot(t, s, c=c, alpha=0.5)
    # return train_a, train_b
-   print(train_a, train_b)
-
-
-
-
-
-        # we only want times for pre-post or post-pre
+   #print(train_a, train_b)
 
 
     # ax.set_xlim(0, len(spikemon.t/t_div))
