@@ -33,8 +33,8 @@ chr_namespace = {
 'f_min': 0.2 * Hz, # BCPNN lowest spiking rate
 'f_max': 25 * Hz, # BCPNN highest spiking rate # 25 * Hz
 'eps': 0.0026, # BCPNN lowest probability
-'tau_z_AMPA': 5 * ms, # AMPA Z trace time constant ('tau_z_AMPA')
-'tau_z_NMDA': 100 * ms, # NMDA Z trace time constant ('tau_z_NMDA')
+'tau_z_fast': 5 * ms, # AMPA Z trace time constant ('tau_z_AMPA')
+'tau_z_slow': 100 * ms, # NMDA Z trace time constant ('tau_z_NMDA')
 'tau_p': 10 * second, # P trace time constant
 'tau_e': 500 * ms, # E trace time constant
 # 'K_normal': 0.3, # Regular plasticity
@@ -90,7 +90,7 @@ chr_equations = {
     I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
     # BETA CURRENT -----------------------------------
-    beta = log(P) : 1
+    beta = log(P_fast) : 1
     I_beta = beta_gain * beta : amp
 
     # EXTERNAL CURRENT -------------------------------
@@ -99,24 +99,23 @@ chr_equations = {
     I_stim = (b_on + stim_ta(t,int(i//N_pyr))) * g_stim * (V_m-E_AMPA) : amp
 
     # NOISE CURRENT ----------------------------------
-    db_pos_noise/dt = -b_pos_noise/t_sim : 1 # TODO remove this
-    dg_pos_noise/dt = -g_pos_noise/tau_AMPA + b_pos_noise*gr_bg/t_sim : siemens
-    db_neg_noise/dt = -b_neg_noise/t_sim : 1
-    dg_neg_noise/dt = -g_neg_noise/tau_AMPA + b_neg_noise*gr_bg_n/t_sim : siemens
+    # TODO re-establish alpha synapses?
+    dg_pos_noise/dt = -g_pos_noise/tau_AMPA : siemens
+    dg_neg_noise/dt = -g_neg_noise/tau_AMPA : siemens
     I_noise = (g_pos_noise-g_neg_noise)*(V_m-E_AMPA) : amp
 
     # SPIKE TRAIN ------------------------------------
     dS/dt = -S/t_sim : 1
 
     # AMPA TRACES ------------------------------------
-    dZ_AMPA/dt = (S/(f_max*t_spike) - Z_AMPA + eps)/tau_z_AMPA : 1
-    dE_AMPA/dt = (Z_AMPA-E_AMPA)/tau_e : 1
-    dP_AMPA/dt = K*(E_AMPA-P_AMPA)/tau_p : 1
+    dZ_fast/dt = (S/(f_max*t_spike) - Z_fast + eps)/tau_z_fast : 1
+    dE_fast/dt = (Z_fast-E_fast)/tau_e : 1
+    dP_fast/dt = K*(E_fast-P_fast)/tau_p : 1
 
     # NMDA TRACES ------------------------------------
-    dZ_NMDA/dt = (S/(f_max*t_spike) - Z_NMDA + eps)/tau_z_NMDA : 1
-    dE_NMDA/dt = (Z_NMDA-E_NMDA)/tau_e : 1
-    dP_NMDA/dt = K*(E_NMDA-P_NMDA)/tau_p : 1
+    dZ_slow/dt = (S/(f_max*t_spike) - Z_slow + eps)/tau_z_slow : 1
+    dE_slow/dt = (Z_slow-E_slow)/tau_e : 1
+    dP_slow/dt = K*(E_slow-P_slow)/tau_p : 1
     ''',
 
     'reset_rec': '''
@@ -128,13 +127,45 @@ chr_equations = {
     'threshold_rec': 'V_m>V_peak',
     'refractory_rec': 'tau_ref',
 
-    # BCPNN SYNAPSES
-    'ampa_syn_model': '''
+    # BCPNN SYNAPSES ---------------------------------
+
+    # COMPLETE MODEL ---------------------------------
+    'bcpnn_syn_model': '''
 
     # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_AMPA_pre*Z_AMPA_post-E_syn)/tau_e : 1 (clock-driven)
+    dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
     dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
-    w = (1-w_init)*log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
+    w = (1-w_init)*log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
+    dw_init/dt = -w_init/tau_init : 1 (clock-driven)
+
+    # CONDUCTANCES -----------------------------------
+    b_glut = int(w > 0) : 1
+    # AMPA -------------------------------------------
+    w_AMPA = b_glut * w_gain_AMPA * w : siemens
+    dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    g_AMPA_post = w_AMPA * H_AMPA : siemens (summed)
+    # NMDA -------------------------------------------
+    w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_NMDA_post = w_NMDA * H_NMDA : siemens (summed)
+    # GABA -------------------------------------------
+    w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
+    dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
+    g_GABA_post = w_GABA * H_GABA : siemens (summed)
+    ''',
+    'bcpnn_syn_on_pre': '''
+    H_AMPA = 1
+    H_NMDA = 1
+    H_GABA = 1
+    ''',
+
+    # FAST SYNAPSE MODEL -----------------------------
+    'fast_syn_model': '''
+
+    # SYNAPTIC TRACES & WEIGHTS ----------------------
+    dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
+    dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
+    w = (1-w_init)*log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
     dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
     # CONDUCTANCES -----------------------------------
@@ -149,17 +180,18 @@ chr_equations = {
     g_GABA_post = w_GABA * H_GABA : siemens (summed)
     ''',
 
-    'ampa_syn_on_pre': '''
+    'fast_syn_on_pre': '''
     H_AMPA = 1
     H_GABA = 1
     ''',
 
-    'nmda_syn_model': '''
+    # SLOW SYNAPSE MODEL -----------------------------
+    'slow_syn_model': '''
 
     # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_NMDA_pre*Z_NMDA_post-E_syn)/tau_e : 1 (clock-driven)
+    dE_syn/dt = (Z_slow_pre*Z_slow_post-E_syn)/tau_e : 1 (clock-driven)
     dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
-    w = (1-w_init)*log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
+    w = (1-w_init)*log(P_syn/(P_slow_pre*P_slow_post)) : 1 (constant over dt)
     dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
     # CONDUCTANCES -----------------------------------
@@ -170,7 +202,7 @@ chr_equations = {
     g_NMDA_post = w_NMDA * H_NMDA : siemens (summed)
     ''',
 
-    'nmda_syn_on_pre': '''
+    'slow_syn_on_pre': '''
     H_NMDA = 1
     ''',
 

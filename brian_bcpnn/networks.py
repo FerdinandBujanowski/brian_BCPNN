@@ -39,8 +39,9 @@ class CorticalNetwork():
         if namespace is not None:
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
-        self.REC_TRACES = ['Z', 'E', 'P']
+        self.REC_TRACES = ['Z_fast', 'E_fast', 'P_fast']
         self.S_REC_TRACES = ['E_syn', 'P_syn']
+        self.REC_TRACES_NMDA = ['Z_slow', 'E_slow', 'P_slow']
 
         self.init_rec(eqs, filepath)
 
@@ -52,7 +53,7 @@ class CorticalNetwork():
         # RECURRENT LAYER POISSON INPUT
         self.init_poisson()
 
-    def init_rec(self, eqs, filepath):
+    def init_rec(self, eqs, filepath, b_slow=False):
         # RECURRENT HYPER-MINI-COLUMN LAYER
         self.REC = NeuronGroup(
             self.N, model=eqs['eqs_rec'], method='euler', threshold=eqs['threshold_rec'], reset=eqs['reset_rec'], refractory=eqs['refractory_rec']
@@ -65,9 +66,14 @@ class CorticalNetwork():
                 self.REC.V_m = data['V_m']*mV
                 # I_w TODO compare if this is necessary
                 self.REC.I_w = data['I_w']*nA
-                self.REC.Z = data['Z']
-                self.REC.E = data['E']
-                self.REC.P = data['P']
+                self.REC.Z_fast = data['Z_fast']
+                self.REC.E_fast = data['E_fast']
+                self.REC.P_fast = data['P_fast']
+
+                if b_slow:
+                    self.REC.Z_slow = data['Z_slow']
+                    self.REC.E_slow = data['E_slow']
+                    self.REC.P_slow = data['P_slow']
         else:
             self.REC.V_m = self.namespace['E_L']
 
@@ -89,11 +95,8 @@ class CorticalNetwork():
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
 
-                # self.S_REC.Z = data['Z']
-                # self.S_REC.E = data['E']
-                # self.S_REC.P = data['P']
-                self.S_REC.E_syn = data['E_syn']
-                self.S_REC.P_syn = data['P_syn']
+                self.S_REC.E_syn = data['E_syn_AMPA']
+                self.S_REC.P_syn = data['P_syn_AMPA']
         else:
             p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
             if self.verbose:
@@ -140,6 +143,7 @@ class CorticalNetwork():
     # and to randomly initialise bigger network using statistics from saved params
     # Note that this only makes sense with networks that haven't yet learned any patterns
     def sample_params(self, filepath):
+        raise ValueError("The sample_params() function needs to be completely reworked!")
         if self.verbose:
             print(f'Sampling parameter values from distributions of file {filepath}.')
         with open(filepath, 'rb') as f:
@@ -260,42 +264,44 @@ class CorticalNetwork():
         if self.verbose: 
             print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
-    def init_traces(self):
+    def init_traces(self, S_NMDA=None):
         eps = self.namespace['eps']
         if self.verbose:
             print(f'Initialising model traces with eps={eps}')
-        self.REC.set_states({'Z': eps, 'E': eps, 'P': eps})
-        self.S_REC.set_states({'E_syn': eps**2, 'P_syn': eps**2})
+        
+        synapse_list = [self.S_REC]
+        if S_NMDA is not None:
+            synapse_list.append(S_NMDA)
+        for synapse, mode in zip(synapse_list, ['fast', 'slow']):
+            self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps, f'P_{mode}': eps})
+            synapse.set_states({f'E_syn': eps**2, f'P_syn': eps**2})
 
-    def save_traces(self, path):
+    def save_traces(self, path, S_NMDA=None):
         data = dict()
 
         # REC Layer
-        # V_m
         data['V_m'] = self.REC.V_m/mV
-        # I_w TODO compare if this is necessary
         data['I_w'] = self.REC.I_w/nA
-        # Z_j
-        data['Z'] = self.REC.Z/1
-        # E_j
-        data['E'] = self.REC.E/1
-        # P_j
-        data['P'] = self.REC.P/1
+        
+        data['Z_fast'] = self.REC.Z_fast/1
+        data['E_fast'] = self.REC.E_fast/1
+        data['P_fast'] = self.REC.P_fast/1
 
         # S_REC Synapses
-        # connection
-        data['S_source'] = np.array(self.S_REC.i)
-        data['S_target'] = np.array(self.S_REC.j)
-        # Z_i
-        # data['Z_i'] = self.S_REC.Z_i/1
-        # # E_i
-        # data['E_i'] = self.S_REC.E_i/1
-        # # P_i
-        # data['P_i'] = self.S_REC.P_i/1
-        # E_syn
-        data['E_syn'] = self.S_REC.E_syn/1
-        # P_syn
-        data['P_syn'] = self.S_REC.P_syn/1
+        data[f'S_source'] = np.array(self.S_REC.i)
+        data[f'S_target'] = np.array(self.S_REC.j)
+        
+        synapse_list = [self.S_REC]
+        if S_NMDA is not None:
+            data['Z_slow'] = self.REC.Z_slow/1
+            data['E_slow'] = self.REC.E_slow/1
+            data['P_slow'] = self.REC.P_slow/1
+
+            synapse_list.append(S_NMDA)
+
+        for synapse, mode in zip(synapse_list, ['AMPA', 'NMDA']):
+            data[f'E_syn_{mode}'] = synapse.E_syn/1
+            data[f'P_syn_{mode}'] = synapse.P_syn/1
 
         with open(path, 'wb') as f:
             pickle.dump(data, f)
@@ -304,6 +310,8 @@ class CorticalNetwork():
     def check_inits(self):
         if self.namespace['stim_ta'] is None:
             raise ValueError('No stimulation TimedArray provided.')
+        # TODO rewrite this for standalone mode
+
         # rec_trace_values = self.REC.get_states(self.REC_TRACES)
         # for key in rec_trace_values.keys():
         #     if np.any(rec_trace_values[key] == 0.):
@@ -351,27 +359,12 @@ class ChrysanthidisNetwork(CorticalNetwork):
 
     # @Override
     def init_poisson(self):
-        noise_pos_input = PoissonInput(target=self.REC, target_var='b_pos_noise', N=1, rate=self.namespace['r_bg'], weight=1)
+        noise_pos_input = PoissonInput(target=self.REC, target_var='g_pos_noise', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg'])
         self.add_poisson(noise_pos_input, 'pos_noise')
-        noise_neg_input = PoissonInput(target=self.REC, target_var='b_neg_noise', N=1, rate=self.namespace['r_bg'], weight=1)
+        noise_neg_input = PoissonInput(target=self.REC, target_var='g_neg_noise', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg_n'])
         self.add_poisson(noise_neg_input, 'neg_noise')
         stim_input = PoissonInput(target=self.REC, target_var='g_stim', N=self.N_poisson, rate=self.namespace['r_stim'], weight=self.namespace['gr_stim'])
         self.add_poisson(stim_input, 'stim_input')
-
-    def turn_on_imperfect(self, pattern:Pattern, noise_percentage=0.1, turn_on_other=False):
-        b_on_array = np.zeros(shape=(self.N,))
-        current_pyr = 0
-        for hc in range(self.N_H):
-            for mc in range(self.N_M):
-                for i_pyr in range(current_pyr, current_pyr+self.N_pyr):
-                    rs = np.random.random()
-                    if pattern.contains(ColumnCoords(hc, mc)):
-                        b_on_array[i_pyr] = (rs > (noise_percentage/2))
-                    elif turn_on_other:
-                        b_on_array[i_pyr] = (rs < (noise_percentage/2))
-                current_pyr += self.N_pyr
-        self.REC.b_on[:] = b_on_array
-        return b_on_array
 
 class TullyNetwork(CorticalNetwork):
 
@@ -396,6 +389,72 @@ class TullyNetwork(CorticalNetwork):
         self.namespace['eps'] = self.namespace['epsilon']
         self.init_traces()
 
+
+class TwoSynTypeNetwork(ChrysanthidisNetwork):
+    # TODO override synapse init function
+    def __init__(
+            self, N_H, N_M, N_pyr, N_BA,
+            namespace=chr_namespace, eqs=chr_equations, filepath=None 
+    ):
+        super().__init__(
+            N_H=N_H, N_M=N_M, N_pyr=N_pyr, N_BA=N_BA,
+            namespace=namespace, eqs=eqs, filepath=filepath
+        )
+
+        self.S_NMDA = None
+
+    # @Override
+    def init_rec(self, eqs, filepath, b_slow=False):
+        return super().init_rec(eqs, filepath, b_slow=True)
+
+    # @Override
+    def init_s_rec(self, eqs, filepath):
+
+        # FAST / AMPA
+        self.S_REC = Synapses(
+            self.REC, self.REC, model=eqs['fast_syn_model'], on_pre=eqs['fast_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+        )
+        self.network.add(self.S_REC)
+
+        # SLOW / NMDA
+        self.S_NMDA = Synapses(
+            self.REC, self.REC, model=eqs['slow_syn_model'], on_pre=eqs['slow_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+        )
+        self.network.add(self.S_NMDA)
+
+        # create connections
+        if filepath is not None:
+            with open(filepath, 'rb') as f:
+                data = pickle.load(f)
+                if self.verbose:
+                    print(f'Initialising model parameters from file {filepath}')
+                source_rec = data['S_source']
+                target_rec = data['S_target']
+                self.S_REC.connect(i=source_rec, j=target_rec)
+                self.S_NMDA.connect(i=source_rec, j=target_rec)
+
+                for synapse, mode in zip([self.S_REC, self.S_NMDA], ['AMPA', 'NMDA']):
+                    synapse.E_syn = data[f'E_syn_{mode}']
+                    synapse.P_syn = data[f'P_syn_{mode}']
+        else:
+            p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
+            if self.verbose:
+                print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
+
+            source_rec, target_rec = syls.get_rec_synapses(
+                self.N_H, self.N_M, self.N_pyr, 
+                # 0.9, 0.5, 0.1 # to test connectivity
+                cp_same_mini=p_c,
+                cp_same_hyper=p_c,
+                cp_diff_hyper=p_c
+            )
+            self.S_REC.connect(i=source_rec, j=target_rec)
+            self.S_NMDA.connect(i=source_rec, j=target_rec)
+            self.init_traces(S_NMDA=self.S_NMDA)
+
+    # @Override
+    def save_traces(self, path, S_NMDA=None):
+        return super().save_traces(path, self.S_NMDA)
                     
 class MNGNetwork(CorticalNetwork):
 

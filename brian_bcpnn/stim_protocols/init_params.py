@@ -4,7 +4,7 @@ from brian_bcpnn.networks import MAX_PYR
 from brian_bcpnn.plot import trains, synapses
 import brian_bcpnn.utils.stim_utils as stils
 
-def init_network_params(model, filepath):
+def init_network_params(model, filepath, b_slow=False):
     namespace = model.namespace
     defaultclock.dt = namespace['t_sim']
 
@@ -34,15 +34,11 @@ def init_network_params(model, filepath):
     model.namespace['stim_ta'] = stils.stim_times_to_timed_array(no_stim, t_total, model.N_H, model.N_M)
     
     # initialize p-traces and run without plasticity
-    original_K = model.namespace['K']
     model.namespace['eps'] = defaultclock.dt/t_total
-    # print(model.namespace['eps'])
-    # model.namespace['K'] = 0
-    model.S_REC.w_init[:] = 1
     model.init_traces()
-    # turn on plasticity and run until the weights converge
-    # model.namespace['K'] = original_K
-    # model.S_REC.w_init[:] = 0
+    model.S_REC.w_init[:] = 1
+    if b_slow:
+        model.S_NMDA.w_init[:] = 2
     model.run(t_total)
 
     # save all important values into file

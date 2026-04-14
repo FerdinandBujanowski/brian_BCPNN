@@ -1,7 +1,5 @@
 hebbian/tully_2014/test.py
 
 **/__pycache__
-data/last_batch.data
-data/chr/trained/trained_10_hc_1_p_longer_isi.data
-*.data
 *.csv
+data/chr/stable_init_10_10_30.data
