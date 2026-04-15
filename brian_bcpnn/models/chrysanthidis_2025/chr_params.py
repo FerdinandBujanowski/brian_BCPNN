@@ -26,8 +26,8 @@ chr_namespace = {
 'E_GABA': -75 * mV, # GABA reversal potential
 
 # BCPNN PARAMETERS
-'w_gain_AMPA': 0.33 * nS, # BCPNN AMPA gain
-'w_gain_NMDA': 0.03 * nS, # BCPNN NMDA gain
+'w_gain_AMPA': 0.33 * nS, # BCPNN AMPA gain # 0.33 * nS
+'w_gain_NMDA': 0.0 * nS, # BCPNN NMDA gain # 0.03 * nS
 'w_gain_GABA': 0.33 * nS, # BCPNN GABA gain
 'beta_gain': 40 * pA, # BCPNN bias current gain
 'f_min': 0.2 * Hz, # BCPNN lowest spiking rate
@@ -50,6 +50,7 @@ chr_namespace = {
 'E_L_BA': -70*mV, # basket cell leak reversal potential (added myself)
 'g_PB': 3 * nS, # EXC pyramidal-basket connection conductance # 5 * nS
 'g_BP': 7 * nS, # INH basket-pyramidal connection conductance
+'w_inter_mc': 1, # Inter-MC connection strength
 
 # STIMULATION
 'r_bg': 470 * Hz, # Background noise
@@ -80,18 +81,24 @@ chr_equations = {
     dI_w/dt = -I_w/tau_Iw : amp # adaptation current
 
     # SYNAPTIC CURRENTS ------------------------------
-    g_AMPA : siemens # SUM OVER ALL SYNAPSES
-    I_AMPA = g_AMPA * (V_m - E_AMPA) : amp
-    g_NMDA : siemens # SUM OVER ALL SYNAPSES
-    I_NMDA = g_NMDA * (V_m - E_NMDA) : amp 
-    g_GABA : siemens # SUM OVER ALL SYNAPSES
+    g_AMPA : siemens # SUM OVER ALL FAST SYNAPSES
+    g_MC_AMPA : siemens # SUM OVER ALL INTER-MC SYNAPSES
+    I_AMPA = (g_AMPA + g_MC_AMPA) * (V_m - E_AMPA) : amp
+    # ------------------------------------------------
+    g_NMDA : siemens # SUM OVER ALL SLOW SYNAPSES
+    g_MC_NMDA : siemens # SUM OVER ALL INTER-MC SYNAPSES
+    I_NMDA = (g_NMDA + g_MC_NMDA) * (V_m - E_NMDA) : amp 
+    # ------------------------------------------------
+    g_GABA : siemens # SUM OVER ALL FAST SYNAPSES
     dg_BA/dt = -g_BA/tau_GABA : siemens
     I_GABA = (g_GABA+g_BA) * (V_m - E_GABA) : amp 
+    # ------------------------------------------------
     I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
     # BETA CURRENT -----------------------------------
-    beta = log(P_fast) : 1
-    I_beta = beta_gain * beta : amp
+    beta_fast = log(P_fast) : 1
+    beta_slow = log(P_slow) : 1
+    I_beta = beta_gain * (beta_fast + beta_slow) : amp
 
     # EXTERNAL CURRENT -------------------------------
     b_on : 1 # boolean gate of conductance based stimulation
@@ -123,7 +130,6 @@ chr_equations = {
     I_w += b
     S = 1
     ''',
-
     'threshold_rec': 'V_m>V_peak',
     'refractory_rec': 'tau_ref',
 
@@ -203,6 +209,20 @@ chr_equations = {
     ''',
 
     'slow_syn_on_pre': '''
+    H_NMDA = 1
+    ''',
+
+    # INTER-MINICOLUMN SYNAPSE MODEL 
+    'inter_mc_model': '''
+    # AMPA -------------------------------------------
+    dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    g_MC_AMPA_post = w_gain_AMPA * w_inter_mc * H_AMPA : siemens (summed)
+    # NMDA -------------------------------------------
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_MC_NMDA_post = w_gain_NMDA * w_inter_mc * H_NMDA : siemens (summed)
+    ''',
+    'inter_mc_on_pre': '''
+    H_AMPA = 1
     H_NMDA = 1
     ''',
 

@@ -8,8 +8,7 @@ from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_
 from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
-import brian_bcpnn.utils.stim_utils as stils
-from brian_bcpnn.utils.stim_utils import Pattern, ColumnCoords
+from brian_bcpnn.plot.synapses import plot_connectivity
 
 MAX_PYR = 30
 MAX_BA = 4
@@ -264,7 +263,7 @@ class CorticalNetwork():
         if self.verbose: 
             print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
-    def init_traces(self, S_NMDA=None):
+    def init_traces(self, filepath=None, S_NMDA=None):
         eps = self.namespace['eps']
         if self.verbose:
             print(f'Initialising model traces with eps={eps}')
@@ -272,9 +271,50 @@ class CorticalNetwork():
         synapse_list = [self.S_REC]
         if S_NMDA is not None:
             synapse_list.append(S_NMDA)
-        for synapse, mode in zip(synapse_list, ['fast', 'slow']):
+
+        mode_list = ['fast', 'slow']
+        for mode in mode_list:
             self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps, f'P_{mode}': eps})
+        for synapse in synapse_list:
             synapse.set_states({f'E_syn': eps**2, f'P_syn': eps**2})
+        
+        if filepath is None:
+            return
+        
+        data = None
+        with open(filepath, 'rb') as f:
+            data = pickle.load(f)
+        
+        for synapse, mode in zip(synapse_list, mode_list):
+            fast_mode = mode == 'fast'
+
+            # get P trace distribution (incl mean and std)
+            p_data = data[f'P_{mode}']
+            p_mean = mean(p_data)
+            p_std = std(p_data)
+
+            # set REC P trace (of given mode) equal to uniformly sampled array
+            normal_p_samples = np.random.normal(p_mean, p_std, size=(self.N,))
+            if fast_mode:
+                self.REC.P_fast[:] = normal_p_samples
+            else:
+                self.REC.P_slow[:] = normal_p_samples
+
+            # loop over zipped pre and post synapse indices
+            sampled_weights = np.random.normal(0, 0.1, size=(len(synapse.i)))
+            for i_syn, (n_pre, n_post) in enumerate(zip(synapse.i, synapse.j)):
+
+                # sample weight as a normal of N(0, 1)
+                current_weight = sampled_weights[i_syn]
+
+                # calculate pre-post P trace product
+                p_pre = self.REC.P_fast[n_pre] if fast_mode else self.REC.P_slow[n_pre]
+                p_post = self.REC.P_fast[n_post] if fast_mode else self.REC.P_slow[n_post]
+
+                # calculate corresponding synaptic P trace and overwrite current P syn trace
+                synapse.P_syn[i_syn] = (10**current_weight) * p_pre * p_post
+
+
 
     def save_traces(self, path, S_NMDA=None):
         data = dict()
@@ -286,6 +326,9 @@ class CorticalNetwork():
         data['Z_fast'] = self.REC.Z_fast/1
         data['E_fast'] = self.REC.E_fast/1
         data['P_fast'] = self.REC.P_fast/1
+        data['Z_slow'] = self.REC.Z_slow/1
+        data['E_slow'] = self.REC.E_slow/1
+        data['P_slow'] = self.REC.P_slow/1
 
         # S_REC Synapses
         data[f'S_source'] = np.array(self.S_REC.i)
@@ -293,13 +336,9 @@ class CorticalNetwork():
         
         synapse_list = [self.S_REC]
         if S_NMDA is not None:
-            data['Z_slow'] = self.REC.Z_slow/1
-            data['E_slow'] = self.REC.E_slow/1
-            data['P_slow'] = self.REC.P_slow/1
-
             synapse_list.append(S_NMDA)
 
-        for synapse, mode in zip(synapse_list, ['AMPA', 'NMDA']):
+        for synapse, mode in zip(synapse_list, ['fast', 'slow']):
             data[f'E_syn_{mode}'] = synapse.E_syn/1
             data[f'P_syn_{mode}'] = synapse.P_syn/1
 
@@ -422,8 +461,15 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
         )
         self.network.add(self.S_NMDA)
 
+        # INTER-MC
+        self.S_MC = Synapses(
+            self.REC, self.REC, model=eqs['inter_mc_model'], on_pre=eqs['inter_mc_on_pre'], method='euler', delay=self.namespace['t_delay']
+        )
+        self.network.add(self.S_MC)
+
         # create connections
         if filepath is not None:
+            # TODO this is deprecated if statistic initialisation works well
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
                 if self.verbose:
@@ -443,28 +489,33 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
 
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr, 
-                # 0.9, 0.5, 0.1 # to test connectivity
-                cp_same_mini=p_c,
+                cp_same_mini=0,
                 cp_same_hyper=p_c,
                 cp_diff_hyper=p_c
             )
             self.S_REC.connect(i=source_rec, j=target_rec)
             self.S_NMDA.connect(i=source_rec, j=target_rec)
+
+            source_inter, target_inter = syls.get_rec_synapses(
+                self.N_H, self.N_M, self.N_pyr,
+                cp_same_mini=p_c,
+                cp_same_hyper=0,
+                cp_diff_hyper=0
+            )
+            self.S_MC.connect(i=source_inter, j=target_inter)
+
+            # _, [ax1, ax2, ax3] = plt.subplots(1, 3)
+            # plot_connectivity(ax1, self.S_REC, self.N)
+            # plot_connectivity(ax2, self.S_NMDA, self.N)
+            # plot_connectivity(ax3, self.S_MC, self.N)
+            # plt.show()
+            
             self.init_traces(S_NMDA=self.S_NMDA)
+
+    # @Override
+    def init_traces(self, filepath=None, S_NMDA=None):
+        super().init_traces(filepath=filepath, S_NMDA=self.S_NMDA)
 
     # @Override
     def save_traces(self, path, S_NMDA=None):
         return super().save_traces(path, self.S_NMDA)
-                    
-class MNGNetwork(CorticalNetwork):
-
-    # N_pyr_total: theoretical number of total PYR neurons, 
-    # although less will be simulated 
-    # => N_pyr passed up to super constructor = N_pyr_total / N_MN
-    # N_MN: how many neurons are represented by a single simulated neuron inside REC group
-    def __init__(
-            self, N_H, N_M, N_pyr_total, N_MN, N_BA, N_poisson=1,
-            namespace=chr_namespace, eqs=chr_equations, filepath=None 
-    ):
-        
-        super().__init__(N_H, N_M, int(N_pyr_total/N_MN), N_BA, namespace, eqs, filepath)
