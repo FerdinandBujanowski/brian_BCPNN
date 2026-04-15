@@ -28,8 +28,8 @@ def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr
 
 def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t_div=ms):
     spike_trains = spikemon.spike_trains()
-    train_a = spike_trains[n_a] # exact spike times presyn
-    train_b = spike_trains[n_b] #post
+    train_a = spike_trains[n_a] # exact spike times presynaptic
+    train_b = spike_trains[n_b] # exact spike times postsynaptic
     for train, c in zip([train_a, train_b], [c_a, c_b]):
         t=[0]
         s=[0]
@@ -39,7 +39,6 @@ def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t
                 t.append(t_i)
                 s.append(s_i)
         ax.plot(t, s, c=c, alpha=0.5)
-   # return train_a, train_b
    #print(train_a, train_b)
 
 
