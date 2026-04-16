@@ -231,9 +231,6 @@ class CorticalNetwork():
 
     def save_traces(self, path, S_NMDA=None):
         data = dict()
-
-        print(S_NMDA is None)
-
         
         # TODO optimize code somehow in this way:
         # for trace in ['Z', 'E', 'P']:
@@ -353,8 +350,6 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
             namespace=namespace, eqs=eqs
         )
 
-        self.S_NMDA = None
-
     # @Override
     def init_rec(self, eqs, filepath):
         return super().init_rec(eqs, filepath, b_slow=True)
@@ -430,5 +425,5 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
         super().init_traces(filepath=filepath, S_NMDA=self.S_NMDA)
 
     # @Override
-    def save_traces(self, path):
-        return super().save_traces(path, self.S_NMDA)
+    def save_traces(self, path, S_NMDA=None):
+        return super().save_traces(path, S_NMDA=self.S_NMDA)

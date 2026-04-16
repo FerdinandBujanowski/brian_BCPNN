@@ -36,8 +36,8 @@ plt.hist(p_slow, label='slow', density=True, alpha=0.7)
 plt.hist(p_syn_fast, label='fast syn', density=True, alpha=0.7)
 plt.hist(p_syn_fast, label='fast syn', density=True, alpha=0.7)
 plt.legend()
+plt.title("P trace distributions")
 plt.show()
-
 
 # SAMPLE BOTH TO GET WEIGHT DIST
 min_num = 0.0001
@@ -77,9 +77,9 @@ plt.show()
 p_fast_reconstr = []
 for i in range(1000):
     w_sample = np.random.normal(w_mean, w_std)
-    p_syn_fast_sample = max(min_num, np.random.normal(p_syn_mean, p_syn_std))
+    p_syn_fast_sample = max(min_num, np.random.normal(p_syn_fast_mean, p_syn_fast_std))
 
-    current_reconstr = sqrt(p_syn_sample/(10**w_sample))
+    current_reconstr = sqrt(p_syn_fast_sample/(10**w_sample))
     p_fast_reconstr.append(current_reconstr)
 
 reconstr_mean = np.mean(p_fast_reconstr)
