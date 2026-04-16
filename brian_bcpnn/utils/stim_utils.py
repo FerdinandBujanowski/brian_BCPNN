@@ -6,19 +6,19 @@ def add_time(t_total, new_time):
     return t_total+new_time, new_time
 
 def gcd_list(l, o=None):
-    match len(l):
-        case 0:
-            if o is None:
-                return 0
+    list_len = len(l)
+    if list_len == 0:
+        if o is None:
             return 0
-        case 1:
-            if o is None:
-                return l[0]
-            return gcd(l[0], o)
-        case _:
-            if o is None:
-                return gcd_list(l[2:], gcd(l[0], l[1]))
-            return gcd_list(l[1:], gcd(l[0], o))
+        return 0
+    elif list_len == 1:
+        if o is None:
+            return l[0]
+        return gcd(l[0], o)
+    if o is None:
+        return gcd_list(l[2:], gcd(l[0], l[1]))
+    return gcd_list(l[1:], gcd(l[0], o)) 
+            
 
 @dataclass
 class ColumnCoords:

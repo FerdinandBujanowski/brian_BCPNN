@@ -8,7 +8,7 @@ from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_
 from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
-from brian_bcpnn.plot.synapses import plot_connectivity
+# from brian_bcpnn.plot.synapses import plot_connectivity
 
 MAX_PYR = 30
 MAX_BA = 4
