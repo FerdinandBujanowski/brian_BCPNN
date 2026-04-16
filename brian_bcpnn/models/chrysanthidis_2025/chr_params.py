@@ -35,7 +35,7 @@ chr_namespace = {
 'eps': 0.0026, # BCPNN lowest probability
 'tau_z_fast': 5 * ms, # AMPA Z trace time constant ('tau_z_AMPA')
 'tau_z_slow': 100 * ms, # NMDA Z trace time constant ('tau_z_NMDA')
-'tau_p': 10 * second, # P trace time constant
+'tau_p': 3 * second, # P trace time constant
 'tau_e': 500 * ms, # E trace time constant
 # 'K_normal': 0.3, # Regular plasticity
 'K': 1, # Modulated plasticity ('K_reward')
@@ -53,7 +53,7 @@ chr_namespace = {
 'w_inter_mc': 1, # Inter-MC connection strength
 
 # STIMULATION
-'r_bg': 470 * Hz, # Background noise
+'r_bg': 400 * Hz, # Background noise # 470 Hz
 'gr_bg': 1.5 * nS, # Background conductance (+)
 'gr_bg_n': 1.5 * nS, # Background conductance (-)
 't_stim': 250 * ms, # Stimulation duration

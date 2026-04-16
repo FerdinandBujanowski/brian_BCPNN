@@ -20,10 +20,9 @@ model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA)
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
 
-t_total = 10000 * ms
+t_total = 5000 * ms
 model.namespace['eps'] = defaultclock.dt/t_total
-print(model.namespace['eps'])
-sample_filepath = './data/chr/stable_init_10_2_30.data'
+sample_filepath = f'./data/fast-slow/{N_H}_{N_M}_{N_PYR}_init.data'
 model.init_traces(sample_filepath)
 model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M)
 
@@ -35,7 +34,7 @@ weightmon = model.add_synmon(variables=['w'], record=list(range(100)))
 
 model.run(t_total)
 
-# TODO save model traces
+model.save_traces(f'./data/fast-slow/{N_H}_{N_M}_{N_PYR}_init.data')
 
 fig, [ax0, ax1, ax2] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (1, 2, 2)})
 trains.get_full_train(ax0, basmon, model.N_BA_total, t_total=t_total, t_div=ms, c='b')

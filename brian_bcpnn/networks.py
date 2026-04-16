@@ -74,7 +74,7 @@ class CorticalNetwork():
                     self.REC.E_slow = data['E_slow']
                     self.REC.P_slow = data['P_slow']
         else:
-            self.REC.V_m = self.namespace['E_L']
+            self.REC.V_m[:] = np.random.uniform(-100., -60., size=(self.N,)) * mV
 
     def init_s_rec(self, eqs, filepath):
         # RECURRENT LAYER BCPNN SYNAPSES
@@ -137,93 +137,6 @@ class CorticalNetwork():
         self.S_BP.connect(i=sB, j=tP)
         self.S_PB.connect(i=sP, j=tB)
         self.network.add([self.S_PB, self.S_BP])
-
-    # idea is to take saved params of a smaller network,
-    # and to randomly initialise bigger network using statistics from saved params
-    # Note that this only makes sense with networks that haven't yet learned any patterns
-    def sample_params(self, filepath):
-        raise ValueError("The sample_params() function needs to be completely reworked!")
-        if self.verbose:
-            print(f'Sampling parameter values from distributions of file {filepath}.')
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
-
-            # reconstruct original weights
-            # source_rec = data['S_source']
-            target_rec = data['S_target']
-            P_syn = data['P_syn']
-            P_i = data['P_i']
-            P_j = data['P_j']
-            
-            old_weights = np.zeros(shape=(len(target_rec)))
-            for i, ta in enumerate(target_rec):
-                old_weights[i] = log(P_syn[i]/(P_i[i]*P_j[ta]))
-
-            # Plot distribution of weights
-            w_space = np.linspace(min(old_weights), max(old_weights), 1000)
-            mean_old_weights = np.mean(old_weights)
-            std_old_weights = np.std(old_weights)
-            print(f'mu_w={round(mean_old_weights, 3)}, std_w={round(std_old_weights, 3)}')
-            sigma_old_weights = sqrt(std_old_weights)
-
-            # plot distribution of P_syn
-            fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
-            ax1.hist(old_weights, density=True, color='b', label='data')
-            ax1.plot(w_space, stats.norm.pdf(w_space, mean_old_weights, sigma_old_weights), label='curve fit', c='r', ls='--')
-            ax1.set_xlabel('w')
-            ax1.set_ylabel('density')
-            ax1.legend()
-
-            ax2.hist(P_syn, density=True, color='b')
-            ax2.set_xlabel('P_syn')
-            ax2.set_ylabel('density')
-
-            # fit exponential curve over old_weights->P_syn scatter
-            lowest = 0.0001
-            ex_fu = lambda x, a, c, d: np.max(np.array([np.ones(shape=x.shape)*lowest, a*np.exp(c*x)+d]), axis=0)
-            popt, pcov = curve_fit(ex_fu, old_weights, P_syn)
-            print(", ".join([f'{p}={round(pv, 3)}' for (p, pv) in zip(['a', 'c', 'd'], popt)]))
-
-            ax3.grid()
-            ax3.scatter(old_weights, P_syn, alpha=0.3, label='data', c='b')
-            ax3.plot(w_space, ex_fu(w_space, *popt), label='curve fit', c='r', ls='--')
-            ax3.set_ylabel('P_syn')
-            ax3.set_xlabel('w')
-            ax3.legend()
-
-            fig.suptitle('Weight Statistics of Original Network')
-            plt.show()
-
-            plt.scatter(P_syn, P_i, alpha=0.3)
-            plt.show()
-
-            # sample new weights and calculate corresponding traces
-            new_source_rec = self.S_REC.source
-            new_target_rec = self.S_REC.target
-
-            # randomly sample new weights
-            new_weights = np.random.normal(mean_old_weights, std_old_weights, size=(len(new_source_rec)))
-            for i_syn, (so, ta) in enumerate(zip(new_source_rec, new_target_rec)):
-                # get P_syn based on exponential relationship between w and P_syn
-                current_w = new_weights[i_syn]
-                new_P_syn = ex_fu(current_w, *popt)
-                # calculate Pi and Pj from P_syn (hypothesis: they are equal)
-                new_P_i = np.sqrt(new_P_syn/(10**current_w))
-                assert(new_P_syn > 0. and new_P_i > 0.)
-                # print(f'{current_w}, {new_P_syn}, {new_P_i}')
-                # TODO set values for all traces in REC and S_REC
-                self.S_REC.P_syn[i_syn] = new_P_syn
-                self.S_REC.E_syn[i_syn] = new_P_syn
-                self.S_REC.P_i[i_syn] = new_P_i
-                self.S_REC.E_i[i_syn] = new_P_i
-                self.S_REC.Z_i[i_syn] = new_P_i
-
-                self.REC.P_j[ta] = new_P_i
-                self.REC.E_j[ta] = new_P_i
-                self.REC.Z_j[ta] = new_P_i
-
-            self.REC.V_m[:] = np.random.uniform(-80, -60, size=(self.N)) * mV
-
 
     def add_monitor(self, monitor, name):
         self.monitors[name] = monitor
@@ -319,10 +232,14 @@ class CorticalNetwork():
     def save_traces(self, path, S_NMDA=None):
         data = dict()
 
-        # REC Layer
-        data['V_m'] = self.REC.V_m/mV
-        data['I_w'] = self.REC.I_w/nA
+        print(S_NMDA is None)
+
         
+        # TODO optimize code somehow in this way:
+        # for trace in ['Z', 'E', 'P']:
+        #     for mode in ['fast', 'slow']:
+        #         var_string = f'{trace}_{mode}'
+        #         data[var_string] = self.REC.get_states([var_string], units=False)
         data['Z_fast'] = self.REC.Z_fast/1
         data['E_fast'] = self.REC.E_fast/1
         data['P_fast'] = self.REC.P_fast/1
@@ -330,10 +247,6 @@ class CorticalNetwork():
         data['E_slow'] = self.REC.E_slow/1
         data['P_slow'] = self.REC.P_slow/1
 
-        # S_REC Synapses
-        data[f'S_source'] = np.array(self.S_REC.i)
-        data[f'S_target'] = np.array(self.S_REC.j)
-        
         synapse_list = [self.S_REC]
         if S_NMDA is not None:
             synapse_list.append(S_NMDA)
@@ -344,7 +257,7 @@ class CorticalNetwork():
 
         with open(path, 'wb') as f:
             pickle.dump(data, f)
-            print('Successfully saved model data.')
+            print('Successfully saved model traces.')
 
     def check_inits(self):
         if self.namespace['stim_ta'] is None:
@@ -433,17 +346,17 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
     # TODO override synapse init function
     def __init__(
             self, N_H, N_M, N_pyr, N_BA,
-            namespace=chr_namespace, eqs=chr_equations, filepath=None 
+            namespace=chr_namespace, eqs=chr_equations
     ):
         super().__init__(
             N_H=N_H, N_M=N_M, N_pyr=N_pyr, N_BA=N_BA,
-            namespace=namespace, eqs=eqs, filepath=filepath
+            namespace=namespace, eqs=eqs
         )
 
         self.S_NMDA = None
 
     # @Override
-    def init_rec(self, eqs, filepath, b_slow=False):
+    def init_rec(self, eqs, filepath):
         return super().init_rec(eqs, filepath, b_slow=True)
 
     # @Override
@@ -517,5 +430,5 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
         super().init_traces(filepath=filepath, S_NMDA=self.S_NMDA)
 
     # @Override
-    def save_traces(self, path, S_NMDA=None):
+    def save_traces(self, path):
         return super().save_traces(path, self.S_NMDA)
