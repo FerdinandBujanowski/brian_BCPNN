@@ -2,7 +2,7 @@ from brian2 import *
 import matplotlib.pyplot as plt
 import pickle
 
-filepath = './data/fast-slow/10_2_30_init.data'
+filepath = './data/fast-slow/6_6_30_init.data'
 
 def print_dist(x_mean, x_std, name):
     print(f'{name} distribution: mean={round(x_mean,3)}; std={round(x_std,3)}')

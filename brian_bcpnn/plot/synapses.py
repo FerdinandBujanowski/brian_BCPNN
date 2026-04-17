@@ -55,15 +55,15 @@ def hist_syn_weights(ax, syn):
 
 # TODO seperate logic and plot code, move one to synapse_utils and delete the other if not enough code
 def plot_weight_trajectory(
-        ax, syn:Synapses, synmon:StateMonitor, monitored_indices:tuple[int,int],
+        ax, synmon:StateMonitor, monitored_indices:list[int],
         t_div=ms, plot_std=True, c='b', label=None
 ):
     t_step = len(synmon.t)
     t_array = synmon.t/t_div
     weights = np.zeros(shape=(len(monitored_indices), t_step))
 
-    for i_syn, (i,j) in enumerate(monitored_indices):
-        weights[i_syn,:] = synmon[syn[i,j]].w[0]
+    for i_w, i_syn in enumerate(monitored_indices):
+        weights[i_w,:] = synmon[i_syn].w
     
     w_mean = np.mean(weights, axis=0)
     w_std = np.std(weights, axis=0)

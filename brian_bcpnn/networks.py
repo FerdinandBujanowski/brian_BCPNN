@@ -38,9 +38,8 @@ class CorticalNetwork():
         if namespace is not None:
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
-        self.REC_TRACES = ['Z_fast', 'E_fast', 'P_fast']
+        self.REC_TRACES = ['Z_fast', 'E_fast', 'P_fast', 'Z_slow', 'E_slow', 'P_slow']
         self.S_REC_TRACES = ['E_syn', 'P_syn']
-        self.REC_TRACES_NMDA = ['Z_slow', 'E_slow', 'P_slow']
 
         self.init_rec(eqs, filepath)
 
@@ -97,16 +96,16 @@ class CorticalNetwork():
                 self.S_REC.E_syn = data['E_syn_AMPA']
                 self.S_REC.P_syn = data['P_syn_AMPA']
         else:
-            p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
+            self.p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
             if self.verbose:
-                print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
+                print(f'Randomly generating network connectivity with p_c = {round(self.p_c, 2)}')
 
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr, 
                 # 0.9, 0.5, 0.1 # to test connectivity
-                cp_same_mini=p_c,
-                cp_same_hyper=p_c,
-                cp_diff_hyper=p_c
+                cp_same_mini=self.p_c,
+                cp_same_hyper=self.p_c,
+                cp_diff_hyper=self.p_c
             )
             self.S_REC.connect(i=source_rec, j=target_rec)
             self.init_traces()
@@ -137,6 +136,18 @@ class CorticalNetwork():
         self.S_BP.connect(i=sB, j=tP)
         self.S_PB.connect(i=sP, j=tB)
         self.network.add([self.S_PB, self.S_BP])
+
+        # calculate strength of basket cell conductances
+        n_inc_per_hc = self.p_c * self.N_H * (self.N_M**2) * (self.N_pyr**2)
+        basket_scalar = n_inc_per_hc / 460800
+        g_PB = 3 * basket_scalar * nS
+        g_BP = self.namespace['g_BP_scalar'] * g_PB
+        self.namespace['g_PB'] = g_PB
+        self.namespace['g_BP'] = g_BP
+        self.BA.V_m[:] = np.random.uniform(-100, -60, size=(self.N_BA_total)) * mV
+        print(f'Setting up basket cells with g_PB={round(g_PB/nS,2)}*nS and g_BP={round(g_BP/nS,2)*nS}')
+
+
 
     def add_monitor(self, monitor, name):
         self.monitors[name] = monitor
@@ -176,57 +187,79 @@ class CorticalNetwork():
         if self.verbose: 
             print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
-    def init_traces(self, filepath=None, S_NMDA=None):
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None):
+        MODEL_EPS = "eps"
+        MODEL_FILE = "file"
+        MODEL_ZERO_WEIGHT = "zero_weight"
+        model_options = [MODEL_EPS, MODEL_FILE, MODEL_ZERO_WEIGHT]
+        if model not in model_options:
+            raise ValueError(f"Unknown initialisation model chosen. Options are {", ".join(model_options)}")
+        
         eps = self.namespace['eps']
         if self.verbose:
-            print(f'Initialising model traces with eps={eps}')
-        
+            print(f'Initialising network traces with model "{model}" and eps={eps}')
+
         synapse_list = [self.S_REC]
         if S_NMDA is not None:
             synapse_list.append(S_NMDA)
-
         mode_list = ['fast', 'slow']
-        for mode in mode_list:
-            self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps, f'P_{mode}': eps})
-        for synapse in synapse_list:
-            synapse.set_states({f'E_syn': eps**2, f'P_syn': eps**2})
-        
-        if filepath is None:
+    
+        if model == "eps":
+            for mode in mode_list:
+                self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps, f'P_{mode}': eps})
+            for synapse in synapse_list:
+                synapse.set_states({f'E_syn': eps**2, f'P_syn': eps**2})
             return
         
-        data = None
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
+        elif model == "file" and filepath is not None:
         
-        for synapse, mode in zip(synapse_list, mode_list):
-            fast_mode = mode == 'fast'
+            data = None
+            with open(filepath, 'rb') as f:
+                data = pickle.load(f)
+            
+            for synapse, mode in zip(synapse_list, mode_list):
+                fast_mode = mode == 'fast'
 
-            # get P trace distribution (incl mean and std)
-            p_data = data[f'P_{mode}']
-            p_mean = mean(p_data)
-            p_std = std(p_data)
+                # get P trace distribution (incl mean and std)
+                p_data = data[f'P_{mode}']
+                p_mean = mean(p_data)
+                p_std = std(p_data)
 
-            # set REC P trace (of given mode) equal to uniformly sampled array
-            normal_p_samples = np.random.normal(p_mean, p_std, size=(self.N,))
-            if fast_mode:
-                self.REC.P_fast[:] = normal_p_samples
-            else:
-                self.REC.P_slow[:] = normal_p_samples
+                # set REC P trace (of given mode) equal to uniformly sampled array
+                normal_p_samples = np.random.normal(p_mean, p_std, size=(self.N,))
+                if fast_mode:
+                    self.REC.P_fast[:] = normal_p_samples
+                else:
+                    self.REC.P_slow[:] = normal_p_samples
 
-            # loop over zipped pre and post synapse indices
-            sampled_weights = np.random.normal(0, 0.1, size=(len(synapse.i)))
-            for i_syn, (n_pre, n_post) in enumerate(zip(synapse.i, synapse.j)):
+                # loop over zipped pre and post synapse indices
+                sampled_weights = np.random.normal(0, 0.1, size=(len(synapse.i)))
+                for i_syn, (n_pre, n_post) in enumerate(zip(synapse.i, synapse.j)):
 
-                # sample weight as a normal of N(0, 1)
-                current_weight = sampled_weights[i_syn]
+                    # sample weight as a normal of N(0, 1)
+                    current_weight = sampled_weights[i_syn]
 
-                # calculate pre-post P trace product
-                p_pre = self.REC.P_fast[n_pre] if fast_mode else self.REC.P_slow[n_pre]
-                p_post = self.REC.P_fast[n_post] if fast_mode else self.REC.P_slow[n_post]
+                    # calculate pre-post P trace product
+                    p_pre = self.REC.P_fast[n_pre] if fast_mode else self.REC.P_slow[n_pre]
+                    p_post = self.REC.P_fast[n_post] if fast_mode else self.REC.P_slow[n_post]
 
-                # calculate corresponding synaptic P trace and overwrite current P syn trace
-                synapse.P_syn[i_syn] = (10**current_weight) * p_pre * p_post
+                    # calculate corresponding synaptic P trace and overwrite current P syn trace
+                    synapse.P_syn[i_syn] = (10**current_weight) * p_pre * p_post
 
+
+        elif model == "zero_weight":
+            p_all = 4 / (self.namespace['f_max']*second)
+            p_syn_all = p_all ** 2
+
+            for mode in mode_list:
+                self.REC.set_states({f'P_{mode}': p_all})
+            for synapse in synapse_list:
+                synapse.set_states({'P_syn': p_syn_all})
+
+        for mode in mode_list:
+            self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps})
+        for synapse in synapse_list:
+            synapse.set_states({'E_syn': eps**2})
 
 
     def save_traces(self, path, S_NMDA=None):
@@ -391,22 +424,22 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
                     synapse.E_syn = data[f'E_syn_{mode}']
                     synapse.P_syn = data[f'P_syn_{mode}']
         else:
-            p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
+            self.p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
             if self.verbose:
-                print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
+                print(f'Randomly generating network connectivity with p_c = {round(self.p_c, 2)}')
 
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr, 
                 cp_same_mini=0,
-                cp_same_hyper=p_c,
-                cp_diff_hyper=p_c
+                cp_same_hyper=self.p_c,
+                cp_diff_hyper=self.p_c
             )
             self.S_REC.connect(i=source_rec, j=target_rec)
             self.S_NMDA.connect(i=source_rec, j=target_rec)
 
             source_inter, target_inter = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr,
-                cp_same_mini=p_c,
+                cp_same_mini=self.p_c,
                 cp_same_hyper=0,
                 cp_diff_hyper=0
             )
@@ -421,8 +454,8 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
             self.init_traces(S_NMDA=self.S_NMDA)
 
     # @Override
-    def init_traces(self, filepath=None, S_NMDA=None):
-        super().init_traces(filepath=filepath, S_NMDA=self.S_NMDA)
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None):
+        super().init_traces(filepath=filepath, model=model, S_NMDA=self.S_NMDA)
 
     # @Override
     def save_traces(self, path, S_NMDA=None):

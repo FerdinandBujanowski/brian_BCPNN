@@ -2,16 +2,16 @@
 # 
 
 from brian2 import *
-import brian2cuda
-set_device("cuda_standalone")
+# import brian2cuda
+# set_device("cuda_standalone")
 
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
 from brian_bcpnn.plot import trains
 import brian_bcpnn.utils.stim_utils as stils
 
-N_H = 10
-N_M = 2
+N_H = 4
+N_M = 6
 N_BA = 4
 N_PYR = 30
 model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA)
@@ -19,10 +19,10 @@ model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA)
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
 
-t_total = 5000 * ms
+t_total = 5 * second
 model.namespace['eps'] = defaultclock.dt/t_total
-sample_filepath = f'./data/fast-slow/{N_H}_{N_M}_{N_PYR}_init.data'
-model.init_traces(sample_filepath)
+# sample_filepath = f'./data/fast-slow/10_2_30_init.data'
+model.init_traces(model='zero_weight')
 model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M)
 
 # MONITORS
@@ -33,7 +33,7 @@ weightmon = model.add_synmon(variables=['w'], record=list(range(100)))
 
 model.run(t_total)
 
-model.save_traces(f'./data/fast-slow/{N_H}_{N_M}_{N_PYR}_init.data')
+# model.save_traces(f'./data/fast-slow/{N_H}_{N_M}_{N_PYR}_init.data')
 
 fig, [ax0, ax1, ax2] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (1, 2, 2)})
 trains.get_full_train(ax0, basmon, model.N_BA_total, t_total=t_total, t_div=ms, c='b')
@@ -50,7 +50,6 @@ ax2.legend()
 fig.suptitle('Dynamics without stimulation.')
 plt.show()
 
-# TODO same spike trains with average weight trajectory over time
 fig, [ax0, ax1, ax2] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (1, 2, 2)})
 trains.get_full_train(ax0, basmon, model.N_BA_total, t_total=t_total, t_div=ms, c='b')
 trains.get_full_train(ax1, spikemon, model.N, t_total=t_total, t_div=ms)

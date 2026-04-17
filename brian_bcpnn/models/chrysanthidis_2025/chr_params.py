@@ -28,7 +28,7 @@ chr_namespace = {
 # BCPNN PARAMETERS
 'w_gain_AMPA': 0.33 * nS, # BCPNN AMPA gain # 0.33 * nS
 'w_gain_NMDA': 0.0 * nS, # BCPNN NMDA gain # 0.03 * nS
-'w_gain_GABA': 0.33 * nS, # BCPNN GABA gain
+'w_gain_GABA': 5 * 0.33 * nS, # BCPNN GABA gain
 'beta_gain': 40 * pA, # BCPNN bias current gain
 'f_min': 0.2 * Hz, # BCPNN lowest spiking rate
 'f_max': 25 * Hz, # BCPNN highest spiking rate # 25 * Hz
@@ -38,7 +38,9 @@ chr_namespace = {
 'tau_p': 3 * second, # P trace time constant
 'tau_e': 500 * ms, # E trace time constant
 # 'K_normal': 0.3, # Regular plasticity
-'K': 1, # Modulated plasticity ('K_reward')
+'K_AMPA': 1,
+'K_NMDA': 1,
+# 'K': 1, # Modulated plasticity ('K_reward')
 'tau_init': 7.5 * second, # ease into synaptic connection at simulation beginning
 't_delay': 1.5 * ms, # TODO paper sets one value for each synapse
 
@@ -48,8 +50,10 @@ chr_namespace = {
 'cp_PB': 0.7, # pyr-basket connection probability # 0.7
 'cp_BP': 0.7, # basket-pyr connection probability # 0.7
 'E_L_BA': -70*mV, # basket cell leak reversal potential (added myself)
-'g_PB': 3 * nS, # EXC pyramidal-basket connection conductance # 5 * nS
-'g_BP': 7 * nS, # INH basket-pyramidal connection conductance
+'g_PB': 3 * nS, # EXC pyramidal-basket connection conductance # 3*nS
+'g_BP_scalar': 2.7, # ratio between g_PB and g_BP
+'g_BP': 7 * nS, # INH basket-pyramidal connection conductance # 7*nS
+
 'w_inter_mc': 1, # Inter-MC connection strength
 
 # STIMULATION
@@ -117,12 +121,12 @@ chr_equations = {
     # AMPA TRACES ------------------------------------
     dZ_fast/dt = (S/(f_max*t_spike) - Z_fast + eps)/tau_z_fast : 1
     dE_fast/dt = (Z_fast-E_fast)/tau_e : 1
-    dP_fast/dt = K*(E_fast-P_fast)/tau_p : 1
+    dP_fast/dt = K_AMPA*(E_fast-P_fast)/tau_p : 1
 
     # NMDA TRACES ------------------------------------
     dZ_slow/dt = (S/(f_max*t_spike) - Z_slow + eps)/tau_z_slow : 1
     dE_slow/dt = (Z_slow-E_slow)/tau_e : 1
-    dP_slow/dt = K*(E_slow-P_slow)/tau_p : 1
+    dP_slow/dt = K_NMDA*(E_slow-P_slow)/tau_p : 1
     ''',
 
     'reset_rec': '''
@@ -141,8 +145,7 @@ chr_equations = {
     # SYNAPTIC TRACES & WEIGHTS ----------------------
     dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
     dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
-    w = (1-w_init)*log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
-    dw_init/dt = -w_init/tau_init : 1 (clock-driven)
+    w = log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
 
     # CONDUCTANCES -----------------------------------
     b_glut = int(w > 0) : 1
@@ -170,7 +173,7 @@ chr_equations = {
 
     # SYNAPTIC TRACES & WEIGHTS ----------------------
     dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
-    dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
+    dP_syn/dt = K_AMPA*(E_syn-P_syn)/tau_p : 1 (clock-driven)
     w = (1-w_init)*log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
     dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
@@ -196,7 +199,7 @@ chr_equations = {
 
     # SYNAPTIC TRACES & WEIGHTS ----------------------
     dE_syn/dt = (Z_slow_pre*Z_slow_post-E_syn)/tau_e : 1 (clock-driven)
-    dP_syn/dt = K*(E_syn-P_syn)/tau_p : 1 (clock-driven)
+    dP_syn/dt = K_NMDA*(E_syn-P_syn)/tau_p : 1 (clock-driven)
     w = (1-w_init)*log(P_syn/(P_slow_pre*P_slow_post)) : 1 (constant over dt)
     dw_init/dt = -w_init/tau_init : 1 (clock-driven)
 
