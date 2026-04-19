@@ -14,7 +14,7 @@ N_M = 6
 N_pyr = 30
 N_BA = 4
 # N_poisson = 1
-N_batches = 1
+N_batches = 5
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA)
 

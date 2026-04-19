@@ -138,14 +138,14 @@ class CorticalNetwork():
         self.network.add([self.S_PB, self.S_BP])
 
         # calculate strength of basket cell conductances
-        n_inc_per_hc = self.p_c * self.N_H * (self.N_M**2) * (self.N_pyr**2)
-        basket_scalar = n_inc_per_hc / 460800
-        g_PB = 3 * basket_scalar * nS
-        g_BP = self.namespace['g_BP_scalar'] * g_PB
-        self.namespace['g_PB'] = g_PB
-        self.namespace['g_BP'] = g_BP
-        self.BA.V_m[:] = np.random.uniform(-100, -60, size=(self.N_BA_total)) * mV
-        print(f'Setting up basket cells with g_PB={round(g_PB/nS,2)}*nS and g_BP={round(g_BP/nS,2)*nS}')
+        # n_inc_per_hc = self.p_c * self.N_H * (self.N_M**2) * (self.N_pyr**2)
+        # basket_scalar = n_inc_per_hc / 460800
+        # g_PB = 3 * basket_scalar * nS
+        # g_BP = self.namespace['g_BP_scalar'] * g_PB
+        # self.namespace['g_PB'] = g_PB
+        # self.namespace['g_BP'] = g_BP
+        # self.BA.V_m[:] = np.random.uniform(-100, -60, size=(self.N_BA_total)) * mV
+        # print(f'Setting up basket cells with g_PB={round(g_PB/nS,2)}*nS and g_BP={round(g_BP/nS,2)*nS}')
 
 
 
