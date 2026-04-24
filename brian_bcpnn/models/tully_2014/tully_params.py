@@ -12,18 +12,17 @@ tully_namespace = {
     'V_res': -60 * mV, # membrane reset potential
     't_ref': 2 * ms, # refractory period
     'sim_dt': 0.1 * ms, # time resolution
-
   #  'min_num': 10e-10, # minimum float value
   #  'dI': -0.2 * nA, # external current
 
     # CHANNEL MODEL
     'tau_z': 10 * ms, # Z trace time constant
     'tau_e': 100 * ms, # E trace time constant
-    'tau_p': 3000 * ms, # P trace time constant
+    'tau_p': 1000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
     'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
     #'epsilon': 0.0001, # min bcpnn probability
-    'epsilon': 0.013, #1/(29*Hz * 3000*ms). Before: 0.0001, # min bcpnn probability
+    'epsilon': 0.01, #1/(30*Hz * 3000*ms). Before: 0.0001, # min bcpnn probability
     't_spike': 0.1 * ms, # spike duration
 
     # SYNAPSE MODEL
@@ -58,7 +57,7 @@ tully_equations = {
     I_beta = phi*beta : amp
 
     # on-switch
-    b_on = stim_ta(t,i) : 1
+    b_on = stim_ta(t,i) : 1 
     dg_stim/dt = -g_stim/tau_input : siemens
     dg_alpha/dt = (g_stim-g_alpha)/tau_input : siemens
     I_stim = b_on * g_stim * (V_m-E_ex) : amp

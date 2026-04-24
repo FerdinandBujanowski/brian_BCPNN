@@ -18,6 +18,7 @@ class CorticalNetwork():
             namespace, eqs, filepath=None,
             n_inc_con=100, verbose=True
     ):
+        start_scope()
         
         self.N_H = N_H
         self.N_M = N_M

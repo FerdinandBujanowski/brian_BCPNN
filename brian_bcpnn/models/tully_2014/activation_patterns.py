@@ -1,7 +1,8 @@
 import numpy as np
 
-# Generating 5 patterns (sections) of N=10 bins each.
 
+
+# Generating 5 patterns (sections) of N=10 bins each.
 
 def activation_lists(N):
 
