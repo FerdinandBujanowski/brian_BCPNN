@@ -17,11 +17,9 @@ N_pyr = 30
 N_BA = 4
 N_batches = 1
 
-model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)#, filepath=f'./data/fast-slow/trained_{N_H}_{N_M}_{N_pyr} copy.data')
+model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
-
-model.namespace['K_AMPA'] = 0
-model.namespace['K_NMDA'] = 0
+model.namespace['kappa'] = 0
 
 basmon = model.add_basmon()
 spikemon = model.add_spikemon()
@@ -53,7 +51,7 @@ ax1.set_xlabel(f'Time/{ms}')
 plt.show()
 
 fig, [ax1, ax2] = plt.subplots(1, 2)
-trains.get_spiking_histogram(ax1, spikemon, model.N, t_start=t_start, t_stop=t_start+t_stim)
+trains.get_spiking_histogram(ax1, spikemon, model.N, t_start=t_start+t_stim, t_stop=t_start+2*t_stim)
 ax1.set_title('PYR spikes during stim')
 ax1.set_xlabel('Freq/Hz')
 basmon_freqs = trains.get_spiking_histogram(ax2, basmon, model.N_BA_total, t_start=t_start, t_stop=t_start+t_stim)

@@ -15,7 +15,7 @@ N_H = 6
 N_M = 6
 N_BA = 4
 N_PYR = 30
-model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
+model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA)
 
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
@@ -28,8 +28,7 @@ model.init_traces(model='zero_weight', baseline=spike_freq)
 model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M)
 
 # TODO comment these out
-model.namespace['K_AMPA'] = 0
-model.namespace['K_NMDA'] = 0
+model.namespace['kappa'] = 0
 
 # MONITORS
 basmon = model.add_basmon()

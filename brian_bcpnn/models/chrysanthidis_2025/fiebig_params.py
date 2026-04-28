@@ -3,8 +3,8 @@ from brian2 import *
 fiebig_namespace = {
     't_sim': 0.1*ms,
 
-    'b': 86*pA,
-    'tau_Iw': 500*ms,
+    'b': 90*pA,
+    'tau_Iw': 280*ms,
     'C_m': 280*pF,
     'E_L': -70*mV,
     'g_L': 14*nS,
@@ -16,33 +16,32 @@ fiebig_namespace = {
 
     'tau_rec': 500*ms,
     'tau_AMPA': 5*ms,
-    'tau_NMDA': 100*ms,
+    'tau_NMDA': 10*ms, # 100 * ms
     'tau_GABA': 5*ms,
     'E_AMPA': 0*mV,
     'E_NMDA': 0*mV,
     'E_GABA': -75*mV,
 
-    'K_AMPA': 1,
-    'K_NMDA': 1,
+    # 'K_AMPA': 1,
+    'kappa': 1,
 
     'w_gain_AMPA': 0.1*0.78*3.93*nS,
-    'w_gain_NMDA': 0.1*4*0.21*nS, #TODO increase x5... see if stabilizes
+    'w_gain_NMDA': 0.1*5*0.21*nS, #TODO increase x5... see if stabilizes
     'w_gain_GABA': 0.1*3*3.93*nS,
 
-    'beta_gain': pA*30,
+    'beta_gain': pA*50,
 
     'f_min': 0.5*Hz,
     'f_max': 50*Hz,
     'eps': 0.01,
     't_spike': 0.1*ms,
 
-    'tau_z_fast': 5*ms,
-    'tau_z_slow': 5*ms,
+    'tau_z': 10*ms,
     'tau_e': 100*ms,
     'tau_p': 1*second,
 
-    't_delay': 1.5*ms,
-    't_delay_long': 25*ms,
+    't_delay': '1.5*ms + rand()*0.2*ms',
+    't_delay_long': '15*ms+rand()*4*ms',
 
     'intra_hc_intra_mc': 2.5, # FIXED 
     # 'intra_hc_inter_mc': 0, # this one won't matter if no connection between diff MCs in same HC
@@ -101,9 +100,8 @@ fiebig_equations = {
     I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
     # BETA CURRENT -----------------------------------
-    beta_fast = log(P_fast) : 1
-    beta_slow = log(P_slow) : 1
-    I_beta = beta_gain * (beta_slow) : amp
+    beta = log(P) : 1
+    I_beta = beta_gain * beta : amp
 
     # EXTERNAL CURRENT -------------------------------
     b_on : 1 # boolean gate of conductance based stimulation
@@ -119,14 +117,14 @@ fiebig_equations = {
     dS/dt = -S/t_sim : 1
 
     # AMPA TRACES ------------------------------------
-    dZ_fast/dt = (S/(f_max*t_spike) - Z_fast + eps)/tau_z_fast : 1
-    dE_fast/dt = (Z_fast-E_fast)/tau_e : 1
-    dP_fast/dt = K_AMPA*(E_fast-P_fast)/tau_p : 1
+    # dZ_fast/dt = (S/(f_max*t_spike) - Z_fast + eps)/tau_z_fast : 1
+    # dE_fast/dt = (Z_fast-E_fast)/tau_e : 1
+    # dP_fast/dt = K_AMPA*(E_fast-P_fast)/tau_p : 1
 
     # NMDA TRACES ------------------------------------
-    dZ_slow/dt = (S/(f_max*t_spike) - Z_slow + eps)/tau_z_slow : 1
-    dE_slow/dt = (Z_slow-E_slow)/tau_e : 1
-    dP_slow/dt = K_NMDA*(E_slow-P_slow)/tau_p : 1
+    dZ/dt = (S/(f_max*t_spike) - Z + eps)/tau_z : 1
+    dE/dt = (Z-E)/tau_e : 1
+    dP/dt = kappa*(E-P)/tau_p : 1
     ''',
 
     'reset_rec': '''
@@ -138,21 +136,25 @@ fiebig_equations = {
     'refractory_rec': 'tau_ref',
 
     # BCPNN SYNAPSES ---------------------------------
-
-    # FAST SYNAPSE MODEL -----------------------------
-    'fast_syn_model': '''
-
+    'full_syn_model': '''
     # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
-    dP_syn/dt = K_AMPA*(E_syn - P_syn)/tau_p : 1 (clock-driven)
-    w = log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
+    dE_syn/dt = (Z_pre*Z_post-E_syn)/tau_e : 1 (clock-driven)
+    dP_syn/dt = kappa*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    w = log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
 
     # CONDUCTANCES -----------------------------------
     b_glut = int(w > 0) : 1
+
     # AMPA -------------------------------------------
     w_AMPA = b_glut * w_gain_AMPA * w : siemens
     dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
     g_AMPA_post = w_AMPA * H_AMPA * x : siemens (summed)
+
+    # NMDA -------------------------------------------
+    w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_NMDA_post = w_NMDA * H_NMDA * x : siemens (summed)
+
     # GABA -------------------------------------------
     w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
     dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
@@ -162,35 +164,65 @@ fiebig_equations = {
     dx/dt = (1-x)/tau_rec : 1 (clock-driven)
     ''',
 
-    'fast_syn_on_pre': '''
+    'full_syn_on_pre': '''
     H_AMPA = 1
+    H_NMDA = 1
     H_GABA = 1
     x -= U * x
     ''',
 
-    # SLOW SYNAPSE MODEL -----------------------------
-    'slow_syn_model': '''
+    # FAST SYNAPSE MODEL -----------------------------
+    # 'fast_syn_model': '''
 
-    # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_slow_pre*Z_slow_post-E_syn)/tau_e : 1 (clock-driven)
-    dP_syn/dt = K_NMDA*(E_syn - P_syn)/tau_p : 1 (clock-driven)
-    w = log(P_syn/(P_slow_pre*P_slow_post)) : 1 (constant over dt)
+    # # SYNAPTIC TRACES & WEIGHTS ----------------------
+    # dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
+    # dP_syn/dt = K_AMPA*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    # w = log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
 
-    # CONDUCTANCES -----------------------------------
-    b_glut = int(w > 0) : 1
-    # NMDA -------------------------------------------
-    w_NMDA = b_glut * w_gain_NMDA * w : siemens
-    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
-    g_NMDA_post = w_NMDA * H_NMDA * x : siemens (summed)
+    # # CONDUCTANCES -----------------------------------
+    # b_glut = int(w > 0) : 1
+    # # AMPA -------------------------------------------
+    # w_AMPA = b_glut * w_gain_AMPA * w : siemens
+    # dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    # g_AMPA_post = w_AMPA * H_AMPA * x : siemens (summed)
+    # # GABA -------------------------------------------
+    # w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
+    # dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
+    # g_GABA_post = w_GABA * H_GABA * x : siemens (summed)
 
-    # DEPLETION --------------------------------------
-    dx/dt = (1-x)/tau_rec : 1 (clock-driven)
-    ''',
+    # # DEPLETION --------------------------------------
+    # dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # ''',
 
-    'slow_syn_on_pre': '''
-    H_NMDA = 1
-    x -= U * x
-    ''',
+    # 'fast_syn_on_pre': '''
+    # H_AMPA = 1
+    # H_GABA = 1
+    # x -= U * x
+    # ''',
+
+    # # SLOW SYNAPSE MODEL -----------------------------
+    # 'slow_syn_model': '''
+
+    # # SYNAPTIC TRACES & WEIGHTS ----------------------
+    # dE_syn/dt = (Z_slow_pre*Z_slow_post-E_syn)/tau_e : 1 (clock-driven)
+    # dP_syn/dt = kappa*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    # w = log(P_syn/(P_slow_pre*P_slow_post)) : 1 (constant over dt)
+
+    # # CONDUCTANCES -----------------------------------
+    # b_glut = int(w > 0) : 1
+    # # NMDA -------------------------------------------
+    # w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    # dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    # g_NMDA_post = w_NMDA * H_NMDA * x : siemens (summed)
+
+    # # DEPLETION --------------------------------------
+    # dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # ''',
+
+    # 'slow_syn_on_pre': '''
+    # H_NMDA = 1
+    # x -= U * x
+    # ''',
 
     # INTER-MINICOLUMN SYNAPSE MODEL 
     'inter_mc_model': '''

@@ -49,27 +49,17 @@ synmon_mc_2 = StateMonitor(
     model.S_REC, variables=['w'],
     record=all_diff_indices
 )
-synmon_mc_1_slow = StateMonitor(
-    model.S_NMDA, variables=['w'], 
-    record=all_same_indices
-)
-synmon_mc_2_slow = StateMonitor(
-    model.S_NMDA, variables=['w'],
-    record=all_diff_indices
-)
 # TODO create add_tracemonitor method in network class or TraceMonitor subclass of StateMonitor
 tracemon = StateMonitor(model.REC, variables=model.REC_TRACES, record=[mc_range_i[0], mc_range_j1[0], mc_range_j2[0]])
 
 syn_tracemon_s1 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=all_same_indices[0])
-syn_tracemon_s1_slow = StateMonitor(model.S_NMDA, variables=model.S_REC_TRACES+['w'], record=all_same_indices[0])
 syn_tracemon_s2 = StateMonitor(model.S_REC, variables=model.S_REC_TRACES+['w'], record=all_diff_indices[0])
-syn_tracemon_s2_slow = StateMonitor(model.S_NMDA, variables=model.S_REC_TRACES+['w'], record=all_diff_indices[0])
 
 # bias state monitors
 recorded_biases = np.ndarray.flatten(np.array([mc_range_j1, mc_range_j2]))
-biasmon = model.add_statemon(variables=['beta_fast', 'beta_slow'], record=recorded_biases)
+biasmon = model.add_statemon(variables=['beta'], record=recorded_biases)
 
-for m in [synmon_mc_1, synmon_mc_2, synmon_mc_1_slow, synmon_mc_2_slow, tracemon, syn_tracemon_s1, syn_tracemon_s2, syn_tracemon_s1_slow, syn_tracemon_s2_slow]:
+for m in [synmon_mc_1, synmon_mc_2, tracemon, syn_tracemon_s1, syn_tracemon_s2]:
     model.add_monitor(m, m.name)
 
 # show minicolumns that will be studied later on
@@ -89,7 +79,7 @@ t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
 pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-# pattern_list = stils.PatternList(pattern_list.patterns[0:1])
+pattern_list = stils.PatternList(pattern_list.patterns[0:1])
 
 # print(",".join([str(p) for p in pattern_list.patterns]))
 
@@ -132,23 +122,10 @@ composite.plot_training_protocol(
     pt_dict=pt_dict
 )
 
-plt.title('AMPA weight trajectories')
-plt.savefig(f'{fig_save_path}/training_protocol_ampa.png')
+plt.title('weight trajectories')
+# plt.savefig(f'{fig_save_path}/training_protocol_ampa.png')
 plt.show()
 
-composite.plot_training_protocol(
-    model, basmon, spikemon,
-    [
-        (synmon_mc_1_slow, all_same_indices, 'green', 'co-active neurons'),
-        (synmon_mc_2_slow, all_diff_indices, 'red', 'competing neurons')
-    ],
-    N_batches, t_total, t_div=second,
-    pt_dict=pt_dict
-)
-
-plt.title('NMDA weight trajectories')
-plt.savefig(f'{fig_save_path}/training_protocol_nmda.png')
-plt.show()
 
 # composite.plot_bias_trajectory(
 #     model, spikemon, biasmon,
@@ -163,37 +140,20 @@ plt.show()
 ax4 = composite.plot_traces(
     mc_range_i[0], mc_range_j1[0],
     spikemon, tracemon, syn_tracemon_s1, i_syn=0,
-    t_div=second, mode='fast'
+    t_div=second
 )
-plt.title('AMPA coactive trace example')
+plt.title('NMDA coactive trace example')
 plt.show()
 
 # AMPA EXAMPLE COMPETING TRACES
 ax4 = composite.plot_traces(
     mc_range_i[0], mc_range_j2[0],
     spikemon, tracemon, syn_tracemon_s2, i_syn=0,
-    t_div=second, mode='fast'
-)
-plt.title('AMPA competing trace example')
-plt.show()
-
-# NMDA EXAMPLE COACTIVE TRACES
-ax4 = composite.plot_traces(
-    mc_range_i[0], mc_range_j1[0],
-    spikemon, tracemon, syn_tracemon_s1_slow, i_syn=0,
-    t_div=second, mode='slow'
-)
-plt.title('NMDA coactive trace example')
-plt.show()
-
-# NMDA EXAMPLE COMPETING TRACES
-ax4 = composite.plot_traces(
-    mc_range_i[0], mc_range_j2[0],
-    spikemon, tracemon, syn_tracemon_s2_slow, i_syn=0,
-    t_div=second, mode='slow'
+    t_div=second
 )
 plt.title('NMDA competing trace example')
 plt.show()
+
 
 # ax5 = composite.plot_traces(
 #     diff_i, diff_j,
@@ -208,11 +168,4 @@ fig, ax = plt.subplots()
 im = synapses.plot_weights(ax, model.S_REC, model.N)
 fig.colorbar(im, ax=ax)
 plt.title('AMPA weight matrix')
-plt.show()
-
-# NMDA weight matrix
-fig, ax = plt.subplots()
-im = synapses.plot_weights(ax, model.S_NMDA, model.N)
-fig.colorbar(im, ax=ax)
-plt.title('NMDA weight matrix')
 plt.show()
