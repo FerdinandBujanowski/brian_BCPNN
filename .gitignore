@@ -2,6 +2,8 @@ hebbian/tully_2014/test.py
 
 **/__pycache__
 *.csv
-data/chr/stable_init_10_10_30.data
 
-**/output/
+**/output/**
+.obj
+.cpp
+.h
