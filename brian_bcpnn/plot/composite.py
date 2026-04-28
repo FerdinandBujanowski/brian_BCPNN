@@ -6,20 +6,20 @@ from brian_bcpnn.utils.stim_utils import StimTime
 from brian_bcpnn.plot import traces, trains, synapses
 
 def plot_traces(
-        i, j, spikemon, statemon, synmon, synapse, t_div=second
+        i, j, spikemon, statemon, synmon, i_syn, mode, t_div=second
 ):
     fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True,
                                      gridspec_kw={'height_ratios': (1, 2, 2, 3, 3)})
 
     trains.compare_two_trains(ax1, spikemon, i, j, t_div=t_div)
 
-    traces.plot_z_traces(ax2, statemon, i, j, t_div=t_div)
+    traces.plot_z_traces(ax2, statemon, i, j, mode=mode, t_div=t_div)
 
-    traces.plot_e_traces(ax3, statemon, synmon, synapse, i, j, t_div=t_div)
+    traces.plot_e_traces(ax3, statemon, synmon, i_syn, i, j, mode=mode, t_div=t_div)
 
-    traces.plot_p_traces(ax4, statemon, synmon, synapse, i, j, t_div=t_div)
+    traces.plot_p_traces(ax4, statemon, synmon, i_syn, i, j, mode=mode, t_div=t_div)
 
-    ax5.plot(synmon.t/t_div, synmon[synapse[i,j]].w[0], c='k')
+    ax5.plot(synmon.t/t_div, synmon.w[i_syn], c='k')
     ax5.set_ylabel('weight')
     ax5.set_xlabel(f'Time ({t_div})')
     ax5.grid()
@@ -29,7 +29,7 @@ def plot_traces(
 
 def plot_training_protocol(
         model, basmon, spikemon, 
-        syn_list:list[tuple[StateMonitor, list[tuple[int,int,str,str]]]],
+        syn_list:list[tuple[StateMonitor, list[int], str, str]],
         N_batches, t_total, t_div=second,
         pt_dict:dict[str,list[StimTime]]=None
     ):
@@ -37,10 +37,10 @@ def plot_training_protocol(
 
     plot_ba_pyr_trains(ax0, ax1, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict)
 
-    for (synmon, syn_tuples, color, label) in syn_list:
+    for (synmon, syn_indices, color, label) in syn_list:
         synapses.plot_weight_trajectory(
-            ax2, model.S_REC,
-            synmon, syn_tuples, 
+            ax=ax2,
+            synmon=synmon, monitored_indices=syn_indices, 
             t_div=t_div, c=color, label=label
         )
     ax2.grid()

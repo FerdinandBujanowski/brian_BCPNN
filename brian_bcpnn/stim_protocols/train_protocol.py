@@ -27,10 +27,10 @@ def train_n_epochs(
 
     return stims, t_total
 
-def get_total_time(t_init, t_stim, t_isi, t_end, n_batches=1):
+def get_total_time(t_init, t_stim, t_isi, t_end, n_batches=1, n_patterns=1):
     return (
         + t_init
-        + n_batches*t_stim
-        + max(n_batches-1,0)*t_isi
+        + n_patterns * (n_batches*t_stim
+        + max(n_batches-1,0)*t_isi)
         + t_end
     )

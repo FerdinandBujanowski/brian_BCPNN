@@ -62,15 +62,13 @@ def get_synapse_index(source, target, source_list, target_list):
             return i
     return None
 
-def get_synapse_indices(synapse, source_range, target_range):
+def get_synapse_indices(synapse, source_min, source_max, target_min, target_max):
     source_list = synapse.i
     target_list = synapse.j
 
     indices = []
-    for source in source_range:
-        for target in target_range:
-            syn_i = get_synapse_index(source, target, source_list, target_list)
-            if syn_i is not None:
-                indices.append(syn_i)
+    for i, (s, t) in enumerate(zip(source_list, target_list)):
+        if s <= source_max and s >= source_min and t <= target_min and t >= target_max:
+            indices.append(i)
 
     return indices

@@ -5,11 +5,11 @@ from scipy.optimize import curve_fit
 import scipy.stats as stats
 sys.path.append("./")
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_equations
+from brian_bcpnn.models.chrysanthidis_2025.fiebig_params import fiebig_equations, fiebig_namespace
 from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
-import brian_bcpnn.utils.stim_utils as stils
-from brian_bcpnn.utils.stim_utils import Pattern, ColumnCoords
+# from brian_bcpnn.plot.synapses import plot_connectivity
 
 MAX_PYR = 30
 MAX_BA = 4
@@ -39,7 +39,7 @@ class CorticalNetwork():
         if namespace is not None:
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
-        self.REC_TRACES = ['Z', 'E', 'P']
+        self.REC_TRACES = ['Z_fast', 'E_fast', 'P_fast', 'Z_slow', 'E_slow', 'P_slow']
         self.S_REC_TRACES = ['E_syn', 'P_syn']
 
         self.init_rec(eqs, filepath)
@@ -52,7 +52,7 @@ class CorticalNetwork():
         # RECURRENT LAYER POISSON INPUT
         self.init_poisson()
 
-    def init_rec(self, eqs, filepath):
+    def init_rec(self, eqs, filepath, b_slow=False):
         # RECURRENT HYPER-MINI-COLUMN LAYER
         self.REC = NeuronGroup(
             self.N, model=eqs['eqs_rec'], method='euler', threshold=eqs['threshold_rec'], reset=eqs['reset_rec'], refractory=eqs['refractory_rec']
@@ -62,20 +62,22 @@ class CorticalNetwork():
         if filepath is not None:
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
-                self.REC.V_m = data['V_m']*mV
-                # I_w TODO compare if this is necessary
-                self.REC.I_w = data['I_w']*nA
-                self.REC.Z = data['Z']
-                self.REC.E = data['E']
-                self.REC.P = data['P']
-        else:
-            self.REC.V_m = self.namespace['E_L']
+                self.REC.Z_fast = data['Z_fast']
+                self.REC.E_fast = data['E_fast']
+                self.REC.P_fast = data['P_fast']
+
+                if b_slow:
+                    self.REC.Z_slow = data['Z_slow']
+                    self.REC.E_slow = data['E_slow']
+                    self.REC.P_slow = data['P_slow']
+
+        self.REC.V_m[:] = np.random.uniform(-75, -65, size=(self.N,)) * mV
 
     def init_s_rec(self, eqs, filepath):
         # RECURRENT LAYER BCPNN SYNAPSES
         # TODO sample i-j distances + synaptic delay
         self.S_REC = Synapses(
-            self.REC, self.REC, model=eqs['bcpnn_syn_model'], on_pre=eqs['bcpnn_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.REC, model=eqs['bcpnn_syn_model'], on_pre=eqs['bcpnn_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
         )
         self.network.add(self.S_REC)
 
@@ -89,22 +91,19 @@ class CorticalNetwork():
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
 
-                # self.S_REC.Z = data['Z']
-                # self.S_REC.E = data['E']
-                # self.S_REC.P = data['P']
-                self.S_REC.E_syn = data['E_syn']
-                self.S_REC.P_syn = data['P_syn']
+                self.S_REC.E_syn = data['E_syn_AMPA']
+                self.S_REC.P_syn = data['P_syn_AMPA']
         else:
-            p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
+            self.p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
             if self.verbose:
-                print(f'Randomly generating network connectivity with p_c = {round(p_c, 2)}')
+                print(f'Randomly generating network connectivity with p_c = {round(self.p_c, 2)}')
 
             source_rec, target_rec = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr, 
                 # 0.9, 0.5, 0.1 # to test connectivity
-                cp_same_mini=p_c,
-                cp_same_hyper=p_c,
-                cp_diff_hyper=p_c
+                cp_same_mini=self.p_c,
+                cp_same_hyper=self.p_c,
+                cp_diff_hyper=self.p_c
             )
             self.S_REC.connect(i=source_rec, j=target_rec)
             self.init_traces()
@@ -126,100 +125,26 @@ class CorticalNetwork():
         )
         # PYR --> BA
         self.S_PB = Synapses(
-            self.REC, self.BA, on_pre=eqs['pyr_basket_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.BA, model=eqs['syn_PB'], on_pre=eqs['pyr_basket_on_pre'], method='euler', delay=self.namespace['t_delay']
         )
         # BA --> PYR
         self.S_BP = Synapses(
-            self.BA, self.REC, on_pre=eqs['basket_pyr_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.BA, self.REC, model=eqs['syn_BP'], on_pre=eqs['basket_pyr_on_pre'], method='euler', delay=self.namespace['t_delay']
         )
         self.S_BP.connect(i=sB, j=tP)
         self.S_PB.connect(i=sP, j=tB)
         self.network.add([self.S_PB, self.S_BP])
 
-    # idea is to take saved params of a smaller network,
-    # and to randomly initialise bigger network using statistics from saved params
-    # Note that this only makes sense with networks that haven't yet learned any patterns
-    def sample_params(self, filepath):
-        if self.verbose:
-            print(f'Sampling parameter values from distributions of file {filepath}.')
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
+        # calculate strength of basket cell conductances
+        # n_inc_per_hc = self.p_c * self.N_H * (self.N_M**2) * (self.N_pyr**2)
+        # basket_scalar = n_inc_per_hc / 460800
+        # g_PB = 3 * basket_scalar * nS
+        # g_BP = self.namespace['g_BP_scalar'] * g_PB
+        # self.namespace['g_PB'] = g_PB
+        # self.namespace['g_BP'] = g_BP
+        # self.BA.V_m[:] = np.random.uniform(-100, -60, size=(self.N_BA_total)) * mV
+        # print(f'Setting up basket cells with g_PB={round(g_PB/nS,2)}*nS and g_BP={round(g_BP/nS,2)*nS}')
 
-            # reconstruct original weights
-            # source_rec = data['S_source']
-            target_rec = data['S_target']
-            P_syn = data['P_syn']
-            P_i = data['P_i']
-            P_j = data['P_j']
-            
-            old_weights = np.zeros(shape=(len(target_rec)))
-            for i, ta in enumerate(target_rec):
-                old_weights[i] = log(P_syn[i]/(P_i[i]*P_j[ta]))
-
-            # Plot distribution of weights
-            w_space = np.linspace(min(old_weights), max(old_weights), 1000)
-            mean_old_weights = np.mean(old_weights)
-            std_old_weights = np.std(old_weights)
-            print(f'mu_w={round(mean_old_weights, 3)}, std_w={round(std_old_weights, 3)}')
-            sigma_old_weights = sqrt(std_old_weights)
-
-            # plot distribution of P_syn
-            fig, [ax1, ax2, ax3] = plt.subplots(1, 3)
-            ax1.hist(old_weights, density=True, color='b', label='data')
-            ax1.plot(w_space, stats.norm.pdf(w_space, mean_old_weights, sigma_old_weights), label='curve fit', c='r', ls='--')
-            ax1.set_xlabel('w')
-            ax1.set_ylabel('density')
-            ax1.legend()
-
-            ax2.hist(P_syn, density=True, color='b')
-            ax2.set_xlabel('P_syn')
-            ax2.set_ylabel('density')
-
-            # fit exponential curve over old_weights->P_syn scatter
-            lowest = 0.0001
-            ex_fu = lambda x, a, c, d: np.max(np.array([np.ones(shape=x.shape)*lowest, a*np.exp(c*x)+d]), axis=0)
-            popt, pcov = curve_fit(ex_fu, old_weights, P_syn)
-            print(", ".join([f'{p}={round(pv, 3)}' for (p, pv) in zip(['a', 'c', 'd'], popt)]))
-
-            ax3.grid()
-            ax3.scatter(old_weights, P_syn, alpha=0.3, label='data', c='b')
-            ax3.plot(w_space, ex_fu(w_space, *popt), label='curve fit', c='r', ls='--')
-            ax3.set_ylabel('P_syn')
-            ax3.set_xlabel('w')
-            ax3.legend()
-
-            fig.suptitle('Weight Statistics of Original Network')
-            plt.show()
-
-            plt.scatter(P_syn, P_i, alpha=0.3)
-            plt.show()
-
-            # sample new weights and calculate corresponding traces
-            new_source_rec = self.S_REC.source
-            new_target_rec = self.S_REC.target
-
-            # randomly sample new weights
-            new_weights = np.random.normal(mean_old_weights, std_old_weights, size=(len(new_source_rec)))
-            for i_syn, (so, ta) in enumerate(zip(new_source_rec, new_target_rec)):
-                # get P_syn based on exponential relationship between w and P_syn
-                current_w = new_weights[i_syn]
-                new_P_syn = ex_fu(current_w, *popt)
-                # calculate Pi and Pj from P_syn (hypothesis: they are equal)
-                new_P_i = np.sqrt(new_P_syn/(10**current_w))
-                assert(new_P_syn > 0. and new_P_i > 0.)
-                # print(f'{current_w}, {new_P_syn}, {new_P_i}')
-                # TODO set values for all traces in REC and S_REC
-                self.S_REC.P_syn[i_syn] = new_P_syn
-                self.S_REC.E_syn[i_syn] = new_P_syn
-                self.S_REC.P_i[i_syn] = new_P_i
-                self.S_REC.E_i[i_syn] = new_P_i
-                self.S_REC.Z_i[i_syn] = new_P_i
-
-                self.REC.P_j[ta] = new_P_i
-                self.REC.E_j[ta] = new_P_i
-                self.REC.Z_j[ta] = new_P_i
-
-            self.REC.V_m[:] = np.random.uniform(-80, -60, size=(self.N)) * mV
 
 
     def add_monitor(self, monitor, name):
@@ -247,7 +172,7 @@ class CorticalNetwork():
     def set_namespace(self, namespace):
         self.namespace = namespace
 
-    def run(self, time, namespace=None):
+    def run(self, time, namespace=None, verbose=True):
         self.check_inits()
         current_time = tm.time()
         if namespace is not None:
@@ -257,53 +182,144 @@ class CorticalNetwork():
         else:
             self.network.run(time)
         current_time = tm.time() - current_time
-        if self.verbose: 
+        if verbose: 
             print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
-    def init_traces(self):
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None, baseline=1*Hz):
+        MODEL_EPS = "eps"
+        MODEL_FILE = "file"
+        MODEL_ZERO_WEIGHT = "zero_weight"
+        MODEL_PAPER = "paper"
+        model_options = [MODEL_EPS, MODEL_FILE, MODEL_ZERO_WEIGHT, MODEL_PAPER]
+        if model not in model_options:
+            raise ValueError(f"Unknown initialisation model chosen. Options are {", ".join(model_options)}")
+        
         eps = self.namespace['eps']
         if self.verbose:
-            print(f'Initialising model traces with eps={eps}')
-        self.REC.set_states({'Z': eps, 'E': eps, 'P': eps})
-        self.S_REC.set_states({'E_syn': eps**2, 'P_syn': eps**2})
+            print(f'Initialising network traces with model "{model}" and eps={eps}')
 
-    def save_traces(self, path):
+        synapse_list = [self.S_REC]
+        if S_NMDA is not None:
+            synapse_list.append(S_NMDA)
+        mode_list = ['fast', 'slow']
+    
+        if model == "eps":
+            for mode in mode_list:
+                self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps, f'P_{mode}': eps})
+            for synapse in synapse_list:
+                synapse.set_states({f'E_syn': eps**2, f'P_syn': eps**2})
+            return
+        
+        elif model == "file" and filepath is not None:
+        
+            data = None
+            with open(filepath, 'rb') as f:
+                data = pickle.load(f)
+            
+            for synapse, mode in zip(synapse_list, mode_list):
+                fast_mode = mode == 'fast'
+
+                # get P trace distribution (incl mean and std)
+                p_data = data[f'P_{mode}']
+                p_mean = mean(p_data)
+                p_std = std(p_data)
+
+                # set REC P trace (of given mode) equal to uniformly sampled array
+                normal_p_samples = np.random.normal(p_mean, p_std, size=(self.N,))
+                if fast_mode:
+                    self.REC.P_fast[:] = normal_p_samples
+                else:
+                    self.REC.P_slow[:] = normal_p_samples
+
+                # loop over zipped pre and post synapse indices
+                sampled_weights = np.random.normal(0, 0.1, size=(len(synapse.i)))
+                for i_syn, (n_pre, n_post) in enumerate(zip(synapse.i, synapse.j)):
+
+                    # sample weight as a normal of N(0, 1)
+                    current_weight = sampled_weights[i_syn]
+
+                    # calculate pre-post P trace product
+                    p_pre = self.REC.P_fast[n_pre] if fast_mode else self.REC.P_slow[n_pre]
+                    p_post = self.REC.P_fast[n_post] if fast_mode else self.REC.P_slow[n_post]
+
+                    # calculate corresponding synaptic P trace and overwrite current P syn trace
+                    synapse.P_syn[i_syn] = (10**current_weight) * p_pre * p_post
+
+
+        elif model == "zero_weight":
+            p_all = baseline / self.namespace['f_max']
+            p_syn_all = p_all ** 2
+
+            for mode in mode_list:
+                self.REC.set_states({f'P_{mode}': p_all})
+            for synapse in synapse_list:
+                synapse.set_states({'P_syn': p_syn_all})
+
+        elif model == "paper":
+            # TODO add pattern list to get weights from
+            p_all = baseline / self.namespace['f_max']
+            for mode in mode_list:
+                self.REC.set_states({f'P_{mode}': p_all})
+
+            p_syn_all = []
+            for s, t in zip(self.S_REC.i, self.S_REC.j):
+                s_H, s_M = syls.get_neuron_coords(s, self.N_M, self.N_pyr)
+                t_H, t_M = syls.get_neuron_coords(t, self.N_M, self.N_pyr)
+
+                if s_H == t_H:
+                    # same hypercolumn AND different minicolumn 
+                    # (there are no synapses in S_REC where H==H and M==M)
+                    p_syn_all.append((10**self.namespace['intra_hc_inter_mc'])*(p_all**2))
+                else:
+                    if s_M == t_M:
+                        # different hypercolumns, coactive (assuming orthogonal patterns)
+                        p_syn_all.append((10**self.namespace['inter_hc_coactive'])*(p_all**2))
+                    else:
+                        p_syn_all.append((10**self.namespace['inter_hc_competing'])*(p_all**2))
+            for synapse in synapse_list:
+                synapse.set_states({'P_syn': p_syn_all})
+
+
+        for mode in mode_list:
+            self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps})
+        for synapse in synapse_list:
+            synapse.set_states({'E_syn': eps**2})
+
+    def save_traces(self, path, S_NMDA=None):
         data = dict()
+        
+        # TODO optimize code somehow in this way:
+        # for trace in ['Z', 'E', 'P']:
+        #     for mode in ['fast', 'slow']:
+        #         var_string = f'{trace}_{mode}'
+        #         data[var_string] = self.REC.get_states([var_string], units=False)
+        data['Z_fast'] = self.REC.Z_fast/1
+        data['E_fast'] = self.REC.E_fast/1
+        data['P_fast'] = self.REC.P_fast/1
+        data['Z_slow'] = self.REC.Z_slow/1
+        data['E_slow'] = self.REC.E_slow/1
+        data['P_slow'] = self.REC.P_slow/1
 
-        # REC Layer
-        # V_m
-        data['V_m'] = self.REC.V_m/mV
-        # I_w TODO compare if this is necessary
-        data['I_w'] = self.REC.I_w/nA
-        # Z_j
-        data['Z'] = self.REC.Z/1
-        # E_j
-        data['E'] = self.REC.E/1
-        # P_j
-        data['P'] = self.REC.P/1
-
-        # S_REC Synapses
-        # connection
         data['S_source'] = np.array(self.S_REC.i)
         data['S_target'] = np.array(self.S_REC.j)
-        # Z_i
-        # data['Z_i'] = self.S_REC.Z_i/1
-        # # E_i
-        # data['E_i'] = self.S_REC.E_i/1
-        # # P_i
-        # data['P_i'] = self.S_REC.P_i/1
-        # E_syn
-        data['E_syn'] = self.S_REC.E_syn/1
-        # P_syn
-        data['P_syn'] = self.S_REC.P_syn/1
+
+        synapse_list = [self.S_REC]
+        if S_NMDA is not None:
+            synapse_list.append(S_NMDA)
+
+        for synapse, mode in zip(synapse_list, ['fast', 'slow']):
+            data[f'E_syn_{mode}'] = synapse.E_syn/1
+            data[f'P_syn_{mode}'] = synapse.P_syn/1
 
         with open(path, 'wb') as f:
             pickle.dump(data, f)
-            print('Successfully saved model data.')
+            print('Successfully saved model traces.')
 
     def check_inits(self):
         if self.namespace['stim_ta'] is None:
             raise ValueError('No stimulation TimedArray provided.')
+        # TODO rewrite this for standalone mode
+
         # rec_trace_values = self.REC.get_states(self.REC_TRACES)
         # for key in rec_trace_values.keys():
         #     if np.any(rec_trace_values[key] == 0.):
@@ -351,27 +367,12 @@ class ChrysanthidisNetwork(CorticalNetwork):
 
     # @Override
     def init_poisson(self):
-        noise_pos_input = PoissonInput(target=self.REC, target_var='b_pos_noise', N=1, rate=self.namespace['r_bg'], weight=1)
+        noise_pos_input = PoissonInput(target=self.REC, target_var='g_pos_noise', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg'])
         self.add_poisson(noise_pos_input, 'pos_noise')
-        noise_neg_input = PoissonInput(target=self.REC, target_var='b_neg_noise', N=1, rate=self.namespace['r_bg'], weight=1)
+        noise_neg_input = PoissonInput(target=self.REC, target_var='g_neg_noise', N=1, rate=self.namespace['r_bg'], weight=self.namespace['gr_bg_n'])
         self.add_poisson(noise_neg_input, 'neg_noise')
         stim_input = PoissonInput(target=self.REC, target_var='g_stim', N=self.N_poisson, rate=self.namespace['r_stim'], weight=self.namespace['gr_stim'])
         self.add_poisson(stim_input, 'stim_input')
-
-    def turn_on_imperfect(self, pattern:Pattern, noise_percentage=0.1, turn_on_other=False):
-        b_on_array = np.zeros(shape=(self.N,))
-        current_pyr = 0
-        for hc in range(self.N_H):
-            for mc in range(self.N_M):
-                for i_pyr in range(current_pyr, current_pyr+self.N_pyr):
-                    rs = np.random.random()
-                    if pattern.contains(ColumnCoords(hc, mc)):
-                        b_on_array[i_pyr] = (rs > (noise_percentage/2))
-                    elif turn_on_other:
-                        b_on_array[i_pyr] = (rs < (noise_percentage/2))
-                current_pyr += self.N_pyr
-        self.REC.b_on[:] = b_on_array
-        return b_on_array
 
 class TullyNetwork(CorticalNetwork):
 
@@ -396,16 +397,108 @@ class TullyNetwork(CorticalNetwork):
         self.namespace['eps'] = self.namespace['epsilon']
         self.init_traces()
 
-                    
-class MNGNetwork(CorticalNetwork):
 
-    # N_pyr_total: theoretical number of total PYR neurons, 
-    # although less will be simulated 
-    # => N_pyr passed up to super constructor = N_pyr_total / N_MN
-    # N_MN: how many neurons are represented by a single simulated neuron inside REC group
+class TwoSynTypeNetwork(ChrysanthidisNetwork):
+    # TODO override synapse init function
     def __init__(
-            self, N_H, N_M, N_pyr_total, N_MN, N_BA, N_poisson=1,
-            namespace=chr_namespace, eqs=chr_equations, filepath=None 
+            self, N_H, N_M, N_pyr, N_BA,
+            namespace=fiebig_namespace, eqs=fiebig_equations, filepath=None
     ):
+        super().__init__(
+            N_H=N_H, N_M=N_M, N_pyr=N_pyr, N_BA=N_BA,
+            namespace=namespace, eqs=eqs, filepath=filepath
+        )
+
+    # @Override
+    def init_rec(self, eqs, filepath):
+        return super().init_rec(eqs, filepath, b_slow=True)
+
+    # @Override
+    def init_s_rec(self, eqs, filepath):
+
+        # FAST / AMPA
+        self.S_REC = Synapses(
+            self.REC, self.REC, model=eqs['fast_syn_model'], on_pre=eqs['fast_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
+        )
+        self.network.add(self.S_REC)
+
+        # SLOW / NMDA
+        self.S_NMDA = Synapses(
+            self.REC, self.REC, model=eqs['slow_syn_model'], on_pre=eqs['slow_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
+        )
+        self.network.add(self.S_NMDA)
+
+        # INTER-MC
+        self.S_MC = Synapses(
+            self.REC, self.REC, model=eqs['inter_mc_model'], on_pre=eqs['inter_mc_on_pre'], method='euler', delay=self.namespace['t_delay']
+        )
         
-        super().__init__(N_H, N_M, int(N_pyr_total/N_MN), N_BA, namespace, eqs, filepath)
+        self.p_c = 0 if self.N_H == 1 else 90 / ((self.N_H-1) * self.N_pyr)
+        source_inter, target_inter = syls.get_rec_synapses(
+                self.N_H, self.N_M, self.N_pyr,
+                cp_same_mini=self.namespace['p_c_intra_mc'],
+                cp_same_hyper=0,
+                cp_diff_hyper=0
+            )
+        self.S_MC.connect(i=source_inter, j=target_inter)
+        self.network.add(self.S_MC)
+
+        # create connections
+        if filepath is not None:
+            with open(filepath, 'rb') as f:
+                data = pickle.load(f)
+                if self.verbose:
+                    print(f'Initialising model connectivity & weights from file {filepath}')
+                source_rec = data['S_source']
+                target_rec = data['S_target']
+                self.S_REC.connect(i=source_rec, j=target_rec)
+                self.S_NMDA.connect(i=source_rec, j=target_rec)
+
+                self.S_REC.E_syn = data[f'E_syn_fast']
+                self.S_REC.P_syn = data[f'P_syn_fast']
+                self.S_NMDA.E_syn = data[f'E_syn_slow']
+                self.S_NMDA.P_syn = data[f'P_syn_slow']
+        else:
+            if self.verbose:
+                print(f'Randomly generating network connectivity with p_c = {round(self.p_c, 2)}')
+
+            if  self.N_H > 1:
+                source_rec, target_rec = syls.get_rec_synapses(
+                    self.N_H, self.N_M, self.N_pyr, 
+                    cp_same_mini=0,
+                    cp_same_hyper=0,
+                    cp_diff_hyper=self.p_c
+                )
+                self.S_REC.connect(i=source_rec, j=target_rec)
+                self.S_NMDA.connect(i=source_rec, j=target_rec)
+            else:
+                # TODO make it so that model doesn't crash when it only has 1 HC
+                pass
+
+            
+            # _, [ax1, ax2, ax3] = plt.subplots(1, 3)
+            # plot_connectivity(ax1, self.S_REC, self.N)
+            # plot_connectivity(ax2, self.S_NMDA, self.N)
+            # plot_connectivity(ax3, self.S_MC, self.N)
+            # plt.show()
+
+            # CONDUCTION DELAYS
+            # delays = []
+            # for i, j in zip(self.S_REC.i, self.S_REC.j):
+            #     if i // self.N_pyr == j // self.N_pyr:
+            #         delays.append[self.namespace['t_delay']]
+            #     else:
+            #         delays.append(self.namespace['t_delay']*self.namespace['t_delay_factor'])
+            
+            # self.S_REC.delay = delays
+            # self.S_NMDA.delay = delays
+
+            self.init_traces(S_NMDA=self.S_NMDA)
+
+    # @Override
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None, baseline=1*Hz):
+        super().init_traces(filepath=filepath, model=model, S_NMDA=self.S_NMDA, baseline=baseline)
+
+    # @Override
+    def save_traces(self, path, S_NMDA=None):
+        return super().save_traces(path, S_NMDA=self.S_NMDA)
