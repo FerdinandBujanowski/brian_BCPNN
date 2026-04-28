@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 import scipy.stats as stats
 sys.path.append("./")
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_equations
+from brian_bcpnn.models.chrysanthidis_2025.fiebig_params import fiebig_equations, fiebig_namespace
 from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
@@ -61,9 +62,6 @@ class CorticalNetwork():
         if filepath is not None:
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
-                self.REC.V_m = data['V_m']*mV
-                # I_w TODO compare if this is necessary
-                self.REC.I_w = data['I_w']*nA
                 self.REC.Z_fast = data['Z_fast']
                 self.REC.E_fast = data['E_fast']
                 self.REC.P_fast = data['P_fast']
@@ -72,14 +70,14 @@ class CorticalNetwork():
                     self.REC.Z_slow = data['Z_slow']
                     self.REC.E_slow = data['E_slow']
                     self.REC.P_slow = data['P_slow']
-        else:
-            self.REC.V_m[:] = np.random.uniform(-100., -60., size=(self.N,)) * mV
+
+        self.REC.V_m[:] = np.random.uniform(-75, -65, size=(self.N,)) * mV
 
     def init_s_rec(self, eqs, filepath):
         # RECURRENT LAYER BCPNN SYNAPSES
         # TODO sample i-j distances + synaptic delay
         self.S_REC = Synapses(
-            self.REC, self.REC, model=eqs['bcpnn_syn_model'], on_pre=eqs['bcpnn_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.REC, model=eqs['bcpnn_syn_model'], on_pre=eqs['bcpnn_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
         )
         self.network.add(self.S_REC)
 
@@ -127,11 +125,11 @@ class CorticalNetwork():
         )
         # PYR --> BA
         self.S_PB = Synapses(
-            self.REC, self.BA, on_pre=eqs['pyr_basket_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.BA, model=eqs['syn_PB'], on_pre=eqs['pyr_basket_on_pre'], method='euler', delay=self.namespace['t_delay']
         )
         # BA --> PYR
         self.S_BP = Synapses(
-            self.BA, self.REC, on_pre=eqs['basket_pyr_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.BA, self.REC, model=eqs['syn_BP'], on_pre=eqs['basket_pyr_on_pre'], method='euler', delay=self.namespace['t_delay']
         )
         self.S_BP.connect(i=sB, j=tP)
         self.S_PB.connect(i=sP, j=tB)
@@ -174,7 +172,7 @@ class CorticalNetwork():
     def set_namespace(self, namespace):
         self.namespace = namespace
 
-    def run(self, time, namespace=None):
+    def run(self, time, namespace=None, verbose=True):
         self.check_inits()
         current_time = tm.time()
         if namespace is not None:
@@ -184,14 +182,15 @@ class CorticalNetwork():
         else:
             self.network.run(time)
         current_time = tm.time() - current_time
-        if self.verbose: 
+        if verbose: 
             print(f'Total simulation time = {round(current_time, 2)} seconds.')
 
-    def init_traces(self, model="eps", filepath=None, S_NMDA=None):
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None, baseline=1*Hz):
         MODEL_EPS = "eps"
         MODEL_FILE = "file"
         MODEL_ZERO_WEIGHT = "zero_weight"
-        model_options = [MODEL_EPS, MODEL_FILE, MODEL_ZERO_WEIGHT]
+        MODEL_PAPER = "paper"
+        model_options = [MODEL_EPS, MODEL_FILE, MODEL_ZERO_WEIGHT, MODEL_PAPER]
         if model not in model_options:
             raise ValueError(f"Unknown initialisation model chosen. Options are {", ".join(model_options)}")
         
@@ -248,7 +247,7 @@ class CorticalNetwork():
 
 
         elif model == "zero_weight":
-            p_all = 4 / (self.namespace['f_max']*second)
+            p_all = baseline / self.namespace['f_max']
             p_syn_all = p_all ** 2
 
             for mode in mode_list:
@@ -256,11 +255,35 @@ class CorticalNetwork():
             for synapse in synapse_list:
                 synapse.set_states({'P_syn': p_syn_all})
 
+        elif model == "paper":
+            # TODO add pattern list to get weights from
+            p_all = baseline / self.namespace['f_max']
+            for mode in mode_list:
+                self.REC.set_states({f'P_{mode}': p_all})
+
+            p_syn_all = []
+            for s, t in zip(self.S_REC.i, self.S_REC.j):
+                s_H, s_M = syls.get_neuron_coords(s, self.N_M, self.N_pyr)
+                t_H, t_M = syls.get_neuron_coords(t, self.N_M, self.N_pyr)
+
+                if s_H == t_H:
+                    # same hypercolumn AND different minicolumn 
+                    # (there are no synapses in S_REC where H==H and M==M)
+                    p_syn_all.append((10**self.namespace['intra_hc_inter_mc'])*(p_all**2))
+                else:
+                    if s_M == t_M:
+                        # different hypercolumns, coactive (assuming orthogonal patterns)
+                        p_syn_all.append((10**self.namespace['inter_hc_coactive'])*(p_all**2))
+                    else:
+                        p_syn_all.append((10**self.namespace['inter_hc_competing'])*(p_all**2))
+            for synapse in synapse_list:
+                synapse.set_states({'P_syn': p_syn_all})
+
+
         for mode in mode_list:
             self.REC.set_states({f'Z_{mode}': eps, f'E_{mode}': eps})
         for synapse in synapse_list:
             synapse.set_states({'E_syn': eps**2})
-
 
     def save_traces(self, path, S_NMDA=None):
         data = dict()
@@ -276,6 +299,9 @@ class CorticalNetwork():
         data['Z_slow'] = self.REC.Z_slow/1
         data['E_slow'] = self.REC.E_slow/1
         data['P_slow'] = self.REC.P_slow/1
+
+        data['S_source'] = np.array(self.S_REC.i)
+        data['S_target'] = np.array(self.S_REC.j)
 
         synapse_list = [self.S_REC]
         if S_NMDA is not None:
@@ -376,11 +402,11 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
     # TODO override synapse init function
     def __init__(
             self, N_H, N_M, N_pyr, N_BA,
-            namespace=chr_namespace, eqs=chr_equations
+            namespace=fiebig_namespace, eqs=fiebig_equations, filepath=None
     ):
         super().__init__(
             N_H=N_H, N_M=N_M, N_pyr=N_pyr, N_BA=N_BA,
-            namespace=namespace, eqs=eqs
+            namespace=namespace, eqs=eqs, filepath=filepath
         )
 
     # @Override
@@ -392,13 +418,13 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
 
         # FAST / AMPA
         self.S_REC = Synapses(
-            self.REC, self.REC, model=eqs['fast_syn_model'], on_pre=eqs['fast_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.REC, model=eqs['fast_syn_model'], on_pre=eqs['fast_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
         )
         self.network.add(self.S_REC)
 
         # SLOW / NMDA
         self.S_NMDA = Synapses(
-            self.REC, self.REC, model=eqs['slow_syn_model'], on_pre=eqs['slow_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
+            self.REC, self.REC, model=eqs['slow_syn_model'], on_pre=eqs['slow_syn_on_pre'], method='euler', delay=self.namespace['t_delay_long']
         )
         self.network.add(self.S_NMDA)
 
@@ -406,56 +432,72 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
         self.S_MC = Synapses(
             self.REC, self.REC, model=eqs['inter_mc_model'], on_pre=eqs['inter_mc_on_pre'], method='euler', delay=self.namespace['t_delay']
         )
+        
+        self.p_c = 0 if self.N_H == 1 else 90 / ((self.N_H-1) * self.N_pyr)
+        source_inter, target_inter = syls.get_rec_synapses(
+                self.N_H, self.N_M, self.N_pyr,
+                cp_same_mini=self.namespace['p_c_intra_mc'],
+                cp_same_hyper=0,
+                cp_diff_hyper=0
+            )
+        self.S_MC.connect(i=source_inter, j=target_inter)
         self.network.add(self.S_MC)
 
         # create connections
         if filepath is not None:
-            # TODO this is deprecated if statistic initialisation works well
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
                 if self.verbose:
-                    print(f'Initialising model parameters from file {filepath}')
+                    print(f'Initialising model connectivity & weights from file {filepath}')
                 source_rec = data['S_source']
                 target_rec = data['S_target']
                 self.S_REC.connect(i=source_rec, j=target_rec)
                 self.S_NMDA.connect(i=source_rec, j=target_rec)
 
-                for synapse, mode in zip([self.S_REC, self.S_NMDA], ['AMPA', 'NMDA']):
-                    synapse.E_syn = data[f'E_syn_{mode}']
-                    synapse.P_syn = data[f'P_syn_{mode}']
+                self.S_REC.E_syn = data[f'E_syn_fast']
+                self.S_REC.P_syn = data[f'P_syn_fast']
+                self.S_NMDA.E_syn = data[f'E_syn_slow']
+                self.S_NMDA.P_syn = data[f'P_syn_slow']
         else:
-            self.p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
             if self.verbose:
                 print(f'Randomly generating network connectivity with p_c = {round(self.p_c, 2)}')
 
-            source_rec, target_rec = syls.get_rec_synapses(
-                self.N_H, self.N_M, self.N_pyr, 
-                cp_same_mini=0,
-                cp_same_hyper=self.p_c,
-                cp_diff_hyper=self.p_c
-            )
-            self.S_REC.connect(i=source_rec, j=target_rec)
-            self.S_NMDA.connect(i=source_rec, j=target_rec)
+            if  self.N_H > 1:
+                source_rec, target_rec = syls.get_rec_synapses(
+                    self.N_H, self.N_M, self.N_pyr, 
+                    cp_same_mini=0,
+                    cp_same_hyper=0,
+                    cp_diff_hyper=self.p_c
+                )
+                self.S_REC.connect(i=source_rec, j=target_rec)
+                self.S_NMDA.connect(i=source_rec, j=target_rec)
+            else:
+                # TODO make it so that model doesn't crash when it only has 1 HC
+                pass
 
-            source_inter, target_inter = syls.get_rec_synapses(
-                self.N_H, self.N_M, self.N_pyr,
-                cp_same_mini=self.p_c,
-                cp_same_hyper=0,
-                cp_diff_hyper=0
-            )
-            self.S_MC.connect(i=source_inter, j=target_inter)
-
+            
             # _, [ax1, ax2, ax3] = plt.subplots(1, 3)
             # plot_connectivity(ax1, self.S_REC, self.N)
             # plot_connectivity(ax2, self.S_NMDA, self.N)
             # plot_connectivity(ax3, self.S_MC, self.N)
             # plt.show()
+
+            # CONDUCTION DELAYS
+            # delays = []
+            # for i, j in zip(self.S_REC.i, self.S_REC.j):
+            #     if i // self.N_pyr == j // self.N_pyr:
+            #         delays.append[self.namespace['t_delay']]
+            #     else:
+            #         delays.append(self.namespace['t_delay']*self.namespace['t_delay_factor'])
             
+            # self.S_REC.delay = delays
+            # self.S_NMDA.delay = delays
+
             self.init_traces(S_NMDA=self.S_NMDA)
 
     # @Override
-    def init_traces(self, model="eps", filepath=None, S_NMDA=None):
-        super().init_traces(filepath=filepath, model=model, S_NMDA=self.S_NMDA)
+    def init_traces(self, model="eps", filepath=None, S_NMDA=None, baseline=1*Hz):
+        super().init_traces(filepath=filepath, model=model, S_NMDA=self.S_NMDA, baseline=baseline)
 
     # @Override
     def save_traces(self, path, S_NMDA=None):

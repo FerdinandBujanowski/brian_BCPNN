@@ -4,24 +4,26 @@
 from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
+from brian_bcpnn.models.chrysanthidis_2025.fiebig_params import fiebig_namespace, fiebig_equations
 from brian_bcpnn.plot import trains, synapses, composite
 from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-N_H = 4
+# set_device('cpp_standalone')
+
+N_H = 6
 N_M = 6
 N_pyr = 30
 N_BA = 4
-# N_poisson = 1
-N_batches = 5
+N_batches = 1
 
-model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA)
+model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
 # SYNAPSE INDEXING
 mc_range_i = range(N_pyr) # home MC for comparison
 mc_range_j1 = range(N_M*N_pyr,(N_M+1)*N_pyr) # same activation MC for comparison
-mc_range_j2 = range((2*N_M-1)*N_pyr,2*N_M*N_pyr) # different activation MC for comparison
+mc_range_j2 = range((N_M+int(N_M/2))*N_pyr,(1+N_M+int(N_M/2))*N_pyr) # different activation MC for comparison
 syns_zipped = list(zip(model.S_REC.i, model.S_REC.j))
 
 all_same_indices = []
@@ -71,29 +73,28 @@ for m in [synmon_mc_1, synmon_mc_2, synmon_mc_1_slow, synmon_mc_2_slow, tracemon
     model.add_monitor(m, m.name)
 
 # show minicolumns that will be studied later on
-# fig, ax = plt.subplots()
-# synapses.plot_connectivity(
-#     ax, model.S_REC, model.N,
-#     colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
-#     aspect='equal'
-#     )
-# plt.show()
+fig, ax = plt.subplots()
+synapses.plot_connectivity(
+    ax, model.S_REC, model.N,
+    colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
+    aspect='equal'
+    )  
+plt.show()
 
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
 t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
 # TODO put these into param file(s)
-t_init, t_end = 500*ms, 200*ms
+t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
 pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-# pattern_list = stils.PatternList([pattern_list.patterns[0]]) 
+# pattern_list = stils.PatternList(pattern_list.patterns[0:1])
+
+# print(",".join([str(p) for p in pattern_list.patterns]))
 
 t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
-model.namespace['eps'] = defaultclock.dt/t_total
 model.init_traces(model='zero_weight')
-
-# model.namespace['K_NMDA'] = 0
 
 # calling train_n_epochs runs the simulation
 stims, t_total = train_n_epochs(
@@ -158,13 +159,41 @@ plt.show()
 # plt.savefig(f'./figs/bias_' + suffix + '.png')
 # plt.show()
 
-# ax4 = composite.plot_traces(
-#     same_i, same_j,
-#     spikemon, tracemon, syn_tracemon_s1, model.S_REC,
-#     t_div=second
-# )
-# plt.savefig(f'./figs/traces_coactive_' + suffix + '.png')
-# plt.show()
+# AMPA EXAMPLE COACTIVE TRACES
+ax4 = composite.plot_traces(
+    mc_range_i[0], mc_range_j1[0],
+    spikemon, tracemon, syn_tracemon_s1, i_syn=0,
+    t_div=second, mode='fast'
+)
+plt.title('AMPA coactive trace example')
+plt.show()
+
+# AMPA EXAMPLE COMPETING TRACES
+ax4 = composite.plot_traces(
+    mc_range_i[0], mc_range_j2[0],
+    spikemon, tracemon, syn_tracemon_s2, i_syn=0,
+    t_div=second, mode='fast'
+)
+plt.title('AMPA competing trace example')
+plt.show()
+
+# NMDA EXAMPLE COACTIVE TRACES
+ax4 = composite.plot_traces(
+    mc_range_i[0], mc_range_j1[0],
+    spikemon, tracemon, syn_tracemon_s1_slow, i_syn=0,
+    t_div=second, mode='slow'
+)
+plt.title('NMDA coactive trace example')
+plt.show()
+
+# NMDA EXAMPLE COMPETING TRACES
+ax4 = composite.plot_traces(
+    mc_range_i[0], mc_range_j2[0],
+    spikemon, tracemon, syn_tracemon_s2_slow, i_syn=0,
+    t_div=second, mode='slow'
+)
+plt.title('NMDA competing trace example')
+plt.show()
 
 # ax5 = composite.plot_traces(
 #     diff_i, diff_j,
@@ -174,8 +203,16 @@ plt.show()
 # plt.savefig(f'./figs/traces_competing_' + suffix + '.png')
 # plt.show()
 
+# AMPA weight matrix
 fig, ax = plt.subplots()
 im = synapses.plot_weights(ax, model.S_REC, model.N)
 fig.colorbar(im, ax=ax)
-plt.savefig(f'{fig_save_path}/weight_matrix_AMPA.png')
+plt.title('AMPA weight matrix')
+plt.show()
+
+# NMDA weight matrix
+fig, ax = plt.subplots()
+im = synapses.plot_weights(ax, model.S_NMDA, model.N)
+fig.colorbar(im, ax=ax)
+plt.title('NMDA weight matrix')
 plt.show()

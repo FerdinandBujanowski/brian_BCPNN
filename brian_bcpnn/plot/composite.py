@@ -6,20 +6,20 @@ from brian_bcpnn.utils.stim_utils import StimTime
 from brian_bcpnn.plot import traces, trains, synapses
 
 def plot_traces(
-        i, j, spikemon, statemon, synmon, synapse, t_div=second
+        i, j, spikemon, statemon, synmon, i_syn, mode, t_div=second
 ):
     fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True,
                                      gridspec_kw={'height_ratios': (1, 2, 2, 3, 3)})
 
     trains.compare_two_trains(ax1, spikemon, i, j, t_div=t_div)
 
-    traces.plot_z_traces(ax2, statemon, i, j, t_div=t_div)
+    traces.plot_z_traces(ax2, statemon, i, j, mode=mode, t_div=t_div)
 
-    traces.plot_e_traces(ax3, statemon, synmon, synapse, i, j, t_div=t_div)
+    traces.plot_e_traces(ax3, statemon, synmon, i_syn, i, j, mode=mode, t_div=t_div)
 
-    traces.plot_p_traces(ax4, statemon, synmon, synapse, i, j, t_div=t_div)
+    traces.plot_p_traces(ax4, statemon, synmon, i_syn, i, j, mode=mode, t_div=t_div)
 
-    ax5.plot(synmon.t/t_div, synmon[synapse[i,j]].w[0], c='k')
+    ax5.plot(synmon.t/t_div, synmon.w[i_syn], c='k')
     ax5.set_ylabel('weight')
     ax5.set_xlabel(f'Time ({t_div})')
     ax5.grid()
