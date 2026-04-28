@@ -16,9 +16,10 @@ tully_namespace = {
   #  'dI': -0.2 * nA, # external current
 
     # CHANNEL MODEL
-    'tau_z': 10 * ms, # Z trace time constant
+    'tau_z': 5 * ms, # Z trace time constant, 10 normally
+    # 'tau_z': 10 * ms # normally in the model 
     'tau_e': 100 * ms, # E trace time constant
-    'tau_p': 1000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
+    'tau_p': 10000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
     'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
     #'epsilon': 0.0001, # min bcpnn probability
