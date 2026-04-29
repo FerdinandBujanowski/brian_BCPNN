@@ -12,74 +12,67 @@ import brian_bcpnn.utils.synapse_utils as syls
 from brian_bcpnn.models.tully_2014.tully_params import tully_equations
 # from activation_patterns import activation_lists
 
-NEW_TAU_P = 3*second # 3 000 ms 
+NEW_TAU_P = 10000*ms # As in Tully.  3 000 ms
 dt = 0.01 * ms
 defaultclock.dt = dt
-t_total = 10*NEW_TAU_P # 10 * tau_p = 30 000 ms = 30 s
-t_stim = t_total/50 
+epsilon_n = 0.033 # epsilon = f_min/f_max, a baseline firing rate
+# epsilon = 1 /(f_max * tau_p) = 0.0033
 
 
-# look up t_total (and other arguments) and what Ferdinand wrote about 
+# --------------------- STDP PLOT ------------------------------
 
-i = 40*ms # spike timing interval
-start_scope()
-model = TullyNetwork()
-model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M)
-w_before = model.S_REC.w[0]
-model.run(5*ms)
-model.REC.V_m[0] = 0*mV # spike
-model.run(i)            # time between 
-model.REC.V_m[1] = 0*mV # spike
-w_after = model.S_REC.w[0]
-weightmon = model.add_synmon(variables=['w'], record=True)
-# spikemon = model.add_spikemon()
-
-model.run(t_total)
-
-
-#fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-#trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
-# ax1.plot(spikemon.t, spikemon)
-plot(weightmon.t, weightmon.w[0])
-# composite.plot_traces(0, 1, weightmon, model.S_REC, t_div=ms)
-plt.show()
-
-
-
-
-'''
-t_int = 10*ms
+time_after = 100*ms
 interval_list = range(-50, 50) # think +1 should be the way to go?
 delta_w_list = []
-for i in tqdm(interval_list): # tqdm -> loading bar 
+for i in tqdm(interval_list): # tqdm : loading bar 
     start_scope()
     model = TullyNetwork()
-    model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M) # creating empty TimedArray to run with
-    w_before = model.S_REC.w[0] # S_REC is the synapse between i and j, so this is the synaptic strength aka the weight.
+    model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], NEW_TAU_P, model.N_H, model.N_M) # creating empty TimedArray to run with
+    model.namespace['tau_p'] = NEW_TAU_P 
+
+    model.namespace['epsilon'] = epsilon_n # adjusted to tau_p
+    # I have not changed in networks to 'P_syn': 1.6487*eps**2 and will try with this.
+
+    weightmon = model.add_synmon(variables=['w'], record=True)
     model.run(5*ms)
+    w_before = model.S_REC.w[0] # S_REC is the synapse between i and j, so this is the synaptic strength aka the weight. Weight of the first synapse. 
 
     if i > 0: # aka positive
         # pre - before - post spiking 
         model.REC.V_m[0] = 0*mV # pre first. enough to spike, over -55mV enough (?)
-        model.run(i*ms) # t_int before
-        # post - before - pre
+        model.run(i*ms) # 
         model.REC.V_m[1] = 0*mV # post second.
-        model.run(3*ms) # or something, enough after the spike!
 
     else: # aka negative
         # post - before - pre spiking
         model.REC.V_m[1] = 0*mV # post first
-        model.run(abs(i)*ms) # t_int # abs right I think?
+        model.run(abs(i)*ms) # abs value
         model.REC.V_m[0] = 0*mV # pre second
-        model.run(3*ms) # for how long after? 
-    
-  #  w_after = model.S_REC.w[0] # weight of the first synapse, aka the one connecting neuron 0 and 1 
-    w_after = np.max(model.S_REC.w[0]) # does this work, highest the weight becomes ?
+
+    model.run(100*ms) # or NEW_TAU_P - abs(i) - 5 ms ?
+    w_after = model.S_REC.w[0] # index at timestep of 100 ms 
+
+# ----------------
+ #   correct way of getting the maximum weight (maximum in abs value)
+ #   index_w_after = np.argmax(abs(weightmon.w[0])) #argmax returns indice of max value 
+ #  w_after = weightmon.w[0][index_w_after]
+
+   # w_after = model.S_REC.w[0] # weight of the first synapse, aka the one connecting neuron 0 and 1 
     delta_w_list.append(w_after - w_before) # why does this never turn negative, even for large delta values? 
-    yaxis_delta_w = delta_w_list / np.max(delta_w_list) # should do this in or outside of the loop?
+
+
+# BELOW: trying to make the divided by max delta w work: ...
+
+#index_max_delta = np.argmax(np.abs(delta_w_list)) # indice for where abs value maximal (of list of delta values)
+#max_delta = delta_w_list[index_max_delta] # retrieving this maximal delta
+max_delta = np.max(delta_w_list)
+axis_delta_w = delta_w_list / max_delta
+# axis_delta_w = delta_w_list / np.max(abs(delta_w_list)) # outside of loop
+
+
 
 plt.figure(figsize=(8, 5))
-plt.plot(interval_list, yaxis_delta_w, 'o-', color='steelblue')
+plt.plot(interval_list, axis_delta_w, 'o-', color='steelblue')
 plt.axhline(0, color='gray', linestyle='--', linewidth=0.8)
 plt.axvline(0, color='gray', linestyle='--', linewidth=0.8)
 plt.xlabel('Time interval Δt (ms)\npost→pre (negative) / pre→post (negative)')
@@ -88,25 +81,17 @@ plt.title('STDP curve')
 #plt.tight_layout()
 plt.show()
 
-'''
 
+'''
 
 # decide how long to run it for etc
 
-    # then need to add weight monitor 
-    # need to measure maximal weight? with np.max
     # if interval negative, post-before-pre
     # if interval positive, pre-before-post
 
-    # need to initialize the weight as 1, the % diff will be wrong otherwise I think. 
-    # w = 1 = log(Psyn (= Pij) / Pi x Pj) <=> Pi, Pj = eps ? and Pij = 10x eps^2 
-    # fix interval list haha and also increments. Increments of 1 ms ? 
+            # NOTES OF S_REC
 
-    # np.max for max weight etc......
-
-
-
-'''        self.S_REC = Synapses(
+     self.S_REC = Synapses(
             self.REC, self.REC, model=eqs['bcpnn_syn_model'], on_pre=eqs['bcpnn_syn_on_pre'], method='euler', delay=self.namespace['t_delay']
 
             self.S_REC.connect(i=source_rec, j=target_rec)
