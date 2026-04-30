@@ -16,7 +16,9 @@ tully_namespace = {
   #  'dI': -0.2 * nA, # external current
 
     # CHANNEL MODEL
-    'tau_z': 5 * ms, # Z trace time constant, 10 normally
+   # 'tau_z': 5 * ms, # Z trace time constant, 10 normally
+    'tau_z_i': 5*ms,
+    'tau_z_j': 5*ms,
     # 'tau_z': 10 * ms # normally in the model 
     'tau_e': 100 * ms, # E trace time constant
     'tau_p': 10000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
@@ -49,7 +51,7 @@ tully_equations = {
     'eqs_rec': '''
     # POSTSYNAPTIC (j) TRACES
     dS/dt = -S/sim_dt : 1
-    dZ_j/dt = (S/(f_max*t_spike) - Z_j + epsilon)/tau_z : 1
+    dZ_j/dt = (S/(f_max*t_spike) - Z_j + epsilon)/tau_z_j : 1
     dE_j/dt = (Z_j - E_j)/tau_e : 1
     dP_j/dt = (K*(E_j-P_j))/tau_p : 1
 
@@ -90,7 +92,7 @@ tully_equations = {
 
     # PRESYNAPTIC (i) TRACES ------------------------------------
     dS_i/dt = -S_i/sim_dt : 1 (clock-driven)
-    dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + epsilon)/tau_z : 1 (clock-driven)
+    dZ_i/dt = (S_i/(f_max*t_spike) - Z_i + epsilon)/tau_z_i : 1 (clock-driven)
     dE_i/dt = (Z_i - E_i)/tau_e : 1 (clock-driven)
     dP_i/dt = (K*(E_i-P_i))/tau_p : 1 (clock-driven)
 

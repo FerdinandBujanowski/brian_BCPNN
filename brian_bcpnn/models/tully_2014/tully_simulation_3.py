@@ -12,11 +12,12 @@ import brian_bcpnn.utils.synapse_utils as syls
 from brian_bcpnn.models.tully_2014.tully_params import tully_equations
 # from activation_patterns import activation_lists
 
-NEW_TAU_P = 10000*ms # As in Tully.  3 000 ms
+NEW_TAU_P = 1000*ms # As in Tully.  3 000 ms
+#NEW_TAU_P = 20000*ms 
 dt = 0.01 * ms
 defaultclock.dt = dt
-epsilon_n = 0.033 # epsilon = f_min/f_max, a baseline firing rate
-# epsilon = 1 /(f_max * tau_p) = 0.0033
+epsilon_n = 0.0033 # epsilon = f_min/f_max, a baseline firing rate #0.033
+# before epsilon = 1 /(f_max * tau_p) = 0.0033
 
 
 # --------------------- STDP PLOT ------------------------------
@@ -26,11 +27,12 @@ interval_list = range(-50, 50) # think +1 should be the way to go?
 delta_w_list = []
 for i in tqdm(interval_list): # tqdm : loading bar 
     start_scope()
-    model = TullyNetwork()
-    model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], NEW_TAU_P, model.N_H, model.N_M) # creating empty TimedArray to run with
+   # time_total = (5+abs(i)+time_after)*ms 
+    model = TullyNetwork()                                          # changed from NEW_TAU_P to time_total
+    model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M) # creating empty TimedArray to run with
     model.namespace['tau_p'] = NEW_TAU_P 
-
     model.namespace['epsilon'] = epsilon_n # adjusted to tau_p
+
     # I have not changed in networks to 'P_syn': 1.6487*eps**2 and will try with this.
 
     weightmon = model.add_synmon(variables=['w'], record=True)
@@ -49,7 +51,7 @@ for i in tqdm(interval_list): # tqdm : loading bar
         model.run(abs(i)*ms) # abs value
         model.REC.V_m[0] = 0*mV # pre second
 
-    model.run(100*ms) # or NEW_TAU_P - abs(i) - 5 ms ?
+    model.run(time_after) # or NEW_TAU_P - abs(i) - 5 ms ?
     w_after = model.S_REC.w[0] # index at timestep of 100 ms 
 
 # ----------------
@@ -61,14 +63,13 @@ for i in tqdm(interval_list): # tqdm : loading bar
     delta_w_list.append(w_after - w_before) # why does this never turn negative, even for large delta values? 
 
 
-# BELOW: trying to make the divided by max delta w work: ...
-
+# chosen way of calculating the max delta 
+max_delta = np.max(delta_w_list)
+print(max_delta)
+axis_delta_w = delta_w_list / max_delta
 #index_max_delta = np.argmax(np.abs(delta_w_list)) # indice for where abs value maximal (of list of delta values)
 #max_delta = delta_w_list[index_max_delta] # retrieving this maximal delta
-max_delta = np.max(delta_w_list)
-axis_delta_w = delta_w_list / max_delta
-# axis_delta_w = delta_w_list / np.max(abs(delta_w_list)) # outside of loop
-
+#axis_delta_w = delta_w_list / np.max(abs(delta_w_list)) # outside of loop
 
 
 plt.figure(figsize=(8, 5))
@@ -83,7 +84,6 @@ plt.show()
 
 
 '''
-
 # decide how long to run it for etc
 
     # if interval negative, post-before-pre

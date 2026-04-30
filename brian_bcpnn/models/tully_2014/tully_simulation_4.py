@@ -12,23 +12,35 @@ import brian_bcpnn.utils.synapse_utils as syls
 from brian_bcpnn.models.tully_2014.tully_params import tully_equations
 # from activation_patterns import activation_lists
 
+'''
 NEW_TAU_P = 100*ms # 3 000 ms , 200 ms
 dt = 0.01 * ms
 defaultclock.dt = dt
 epsilon_n = 0.00033 # epsilon = 1 /(f_max * tau_p) = 0.00033
 # new_tau_e = 100*ms
 # trying new tau_e tau_p values 
+'''
+
+NEW_TAU_P = 1000*ms # As in Tully.  3 000 ms
+dt = 0.01 * ms
+defaultclock.dt = dt
+epsilon_n = 0.0033 # epsilon = f_min/f_max, a baseline firing rate
+# before epsilon = 1 /(f_max * tau_p) = 0.0033
 
 # --------- SINGLE SPIKE PAIRS ------------
 
-i = 10*ms # spike timing interval
+#i = 10*ms # spike timing interval
+#i = -10*ms
 # i = 5*ms
 # i = -5*ms
-# i = 20*ms
-# i = 30*ms
+#i = 20*ms
+#i = 30*ms
+#i = 50*ms
+i = 40*ms
 start_scope()
 model = TullyNetwork()
-model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], NEW_TAU_P, model.N_H, model.N_M)
+time_after=100*ms
+model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M)
 model.namespace['tau_p'] = NEW_TAU_P # add in loop also
 model.namespace['epsilon'] = epsilon_n
 # model.namespace['tau_e'] = new_tau_e
@@ -46,7 +58,7 @@ else:
     model.REC.V_m[0] = 0*mV # spike postsyn
 
 # w_after = model.S_REC.w[0]
-model.run(NEW_TAU_P) # run 2xi ?x
+model.run(500*ms)
 
 
 '''
