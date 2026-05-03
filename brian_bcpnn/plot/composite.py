@@ -8,14 +8,14 @@ from brian_bcpnn.plot import traces, trains, synapses
 def plot_traces(
         i, j, spikemon, statemon, synmon, i_syn, t_div=second
 ):
-    fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True,
-                                     gridspec_kw={'height_ratios': (1, 2, 2, 3, 3)})
+    fig, (ax1, ax2, ax4, ax5) = plt.subplots(4, 1, sharex=True,
+                                     gridspec_kw={'height_ratios': (1, 2, 2, 3)})
 
     trains.compare_two_trains(ax1, spikemon, i, j, t_div=t_div)
 
     traces.plot_z_traces(ax2, statemon, i, j, t_div=t_div)
 
-    traces.plot_e_traces(ax3, statemon, synmon, i_syn, i, j, t_div=t_div)
+    # traces.plot_e_traces(ax3, statemon, synmon, i_syn, i, j, t_div=t_div)
 
     traces.plot_p_traces(ax4, statemon, synmon, i_syn, i, j, t_div=t_div)
 
@@ -51,12 +51,12 @@ def plot_training_protocol(
 def plot_spike_train_with_patterns(ax, spikemon, model, t_total, t_div, pt_dict):
     trains.get_full_train(ax, spikemon, model.N, t_total, t_div=t_div)
     if pt_dict is not None:
-        cmap = mpl.colormaps['Greens']
+        # cmap((1+i)/(len(pt_dict)+1))
         for i, pattern_key in enumerate(pt_dict.keys()):
             for j, stim_time in enumerate(pt_dict[pattern_key]):
                 ax.axvspan(
                     xmin=stim_time.t_start/t_div, xmax=stim_time.t_end/t_div, 
-                    color=cmap((1+i)/(len(pt_dict)+1)), alpha=0.3, label=(pattern_key if j==0 else None), zorder=0
+                    color=trains.pattern_cmap((1+i)/(len(pt_dict)+1)), alpha=0.2, label=(pattern_key if j==0 else None), zorder=0
                 )
                 ax.legend()
     ax.set_ylabel('# PYR')
@@ -66,10 +66,13 @@ def plot_ba_pyr_trains(ax0, ax1, model, basmon, spikemon, t_total, t_div=second,
     ax0.set_ylabel('# BA')
     plot_spike_train_with_patterns(ax1, spikemon, model, t_total, t_div, pt_dict)
 
+def plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total, t_div=second, pt_dict=None):
+    plot_spike_train_with_patterns(ax, spikemon, model, t_total, t_div, pt_dict)
+    ax.scatter(basmon.t/t_div, basmon.i*(model.N_pyr/model.N_BA), marker='x', color='b', s=10, alpha=0.3)
+
 def plot_bias_trajectory(model, spikemon, biasmon, hc_indices:list[list[int]], t_total, t_div=second, pt_dict=None):
     fig, [ax1, ax2] = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': (2, 2)})
     plot_spike_train_with_patterns(ax1, spikemon, model, t_total, t_div, pt_dict)
-
 
     bias_cmap = plt.colormaps['Blues']
     for n, indices_list in enumerate(hc_indices):

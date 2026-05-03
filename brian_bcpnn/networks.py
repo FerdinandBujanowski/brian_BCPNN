@@ -39,8 +39,8 @@ class CorticalNetwork():
         if namespace is not None:
             self.set_namespace(namespace)
             self.namespace['N_pyr'] = N_pyr
-        self.REC_TRACES = ['Z', 'E', 'P']
-        self.S_REC_TRACES = ['E_syn', 'P_syn']
+        self.REC_TRACES = ['Z', 'P']
+        self.S_REC_TRACES = ['P_syn']
 
         self.init_rec(eqs, filepath)
 
@@ -63,7 +63,7 @@ class CorticalNetwork():
             with open(filepath, 'rb') as f:
                 data = pickle.load(f)
                 self.REC.Z = data['Z']
-                self.REC.E = data['E']
+                # self.REC.E = data['E']
                 self.REC.P = data['P']
 
         self.REC.V_m[:] = np.random.uniform(-75, -65, size=(self.N,)) * mV
@@ -87,7 +87,7 @@ class CorticalNetwork():
                 self.S_REC.connect(i=source_rec, j=target_rec)
                 self.S_REC.delay = self.namespace['t_delay_long']
 
-                self.S_REC.E_syn = data['E_syn']
+                # self.S_REC.E_syn = data['E_syn']
                 self.S_REC.P_syn = data['P_syn']
         else:
             self.p_c = self.n_inc_con/(self.N_H*self.N_pyr) # assuming number of active MC per HC per pattern = 1
@@ -129,9 +129,9 @@ class CorticalNetwork():
             self.BA, self.REC, model=eqs['syn_BP'], on_pre=eqs['basket_pyr_on_pre'], method='euler'#, delay=self.namespace['t_delay']
         )
         self.S_BP.connect(i=sB, j=tP)
-        self.S_BP.delay = self.namespace['t_delay']
+        self.S_BP.delay = self.namespace['t_delay_basket']
         self.S_PB.connect(i=sP, j=tB)
-        self.S_PB.delay = self.namespace['t_delay']
+        self.S_PB.delay = self.namespace['t_delay_basket']
         self.network.add([self.S_PB, self.S_BP])
 
         # calculate strength of basket cell conductances
@@ -198,8 +198,8 @@ class CorticalNetwork():
             print(f'Initialising network traces with model "{model}" and eps={eps}')
     
         if model == "eps":
-            self.REC.set_states({'Z': eps, 'E': eps, 'P': eps})
-            self.S_REC.set_states({'E_syn': eps**2, 'P_syn': eps**2})
+            self.REC.set_states({'Z': eps, 'P': eps})
+            self.S_REC.set_states({'P_syn': eps**2})
             return
         
         elif model == "file" and filepath is not None:
@@ -229,7 +229,7 @@ class CorticalNetwork():
                     p_post = self.REC.P[n_post]
 
                     # calculate corresponding synaptic P trace and overwrite current P syn trace
-                    self.S_REC.P_syn[i_syn] = (10**current_weight) * p_pre * p_post
+                    self.S_REC.P_syn[i_syn] = (np.e**current_weight) * p_pre * p_post
 
 
         elif model == "zero_weight":
@@ -252,30 +252,30 @@ class CorticalNetwork():
                 if s_H == t_H:
                     # same hypercolumn AND different minicolumn 
                     # (there are no synapses in S_REC where H==H and M==M)
-                    p_syn_all.append((10**self.namespace['intra_hc_inter_mc'])*(p_all**2))
+                    p_syn_all.append((np.e**self.namespace['intra_hc_inter_mc'])*(p_all**2))
                 else:
                     if s_M == t_M:
                         # different hypercolumns, coactive (assuming orthogonal patterns)
-                        p_syn_all.append((10**self.namespace['inter_hc_coactive'])*(p_all**2))
+                        p_syn_all.append((np.e**self.namespace['inter_hc_coactive'])*(p_all**2))
                     else:
-                        p_syn_all.append((10**self.namespace['inter_hc_competing'])*(p_all**2))
+                        p_syn_all.append((np.e**self.namespace['inter_hc_competing'])*(p_all**2))
             self.S_REC.set_states({'P_syn': p_syn_all})
 
 
-        self.REC.set_states({'Z': eps, 'E': eps})
-        self.S_REC.set_states({'E_syn': eps**2})
+        self.REC.set_states({'Z': eps})
+        # self.S_REC.set_states({'E_syn': eps**2})
 
     def save_traces(self, path):
         data = dict()
         
         data['Z'] = self.REC.Z/1
-        data['E'] = self.REC.E/1
+        # data['E'] = self.REC.E/1
         data['P'] = self.REC.P/1
 
         data['S_source'] = np.array(self.S_REC.i)
         data['S_target'] = np.array(self.S_REC.j)
 
-        data['E_syn'] = self.S_REC.E_syn/1
+        # data['E_syn'] = self.S_REC.E_syn/1
         data['P_syn'] = self.S_REC.P_syn/1
 
         with open(path, 'wb') as f:
@@ -413,7 +413,7 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
                 self.S_REC.delay = self.namespace['t_delay_long']
 
                 # TODO export / import synaptic delay from file?
-                self.S_REC.E_syn = data['E_syn']
+                # self.S_REC.E_syn = data['E_syn']
                 self.S_REC.P_syn = data['P_syn']
         else:
             if self.verbose:

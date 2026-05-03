@@ -75,3 +75,23 @@ def plot_weight_trajectory(
     ax.grid()
     ax.set_ylabel('synaptic weight')
     ax.set_xlabel(f'Time/{t_div}')
+
+def plot_weight_matrix_averages(ax, model):
+    length = model.N_H * model.N_M
+    weight_mat = np.zeros(shape=(model.N, model.N))
+    avg_weight_mat = np.zeros(shape=(length, length))
+    PYR = model.N_pyr
+
+    for i_syn, (s, t) in enumerate(zip(model.S_REC.i, model.S_REC.j)):
+        weight_mat[s,t] = model.S_REC.w[i_syn]
+    for i in range(length):
+        for j in range(length):
+            if i != j:
+                weight_slice = weight_mat[i*PYR:(i+1)*PYR, j*PYR:(j+1)*PYR]
+                avg_weight_mat[i,j] = np.sum(weight_slice) / max(np.count_nonzero(weight_slice), 1)
+            else:
+                avg_weight_mat[i,j] = model.namespace['intra_hc_intra_mc']
+    ax.set_ylabel('presynaptic minicolumn')
+    ax.set_xlabel('postsynaptic minicolumn')    
+    im = ax.imshow(avg_weight_mat, aspect='auto', interpolation='none')
+    return im

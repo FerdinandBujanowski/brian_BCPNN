@@ -81,12 +81,15 @@ def get_incomplete_patterns(original_patterns: PatternList, n_MC) -> PatternList
 def train_patterns_protocol(
         pattern_list: PatternList, 
         t_init:Quantity, t_stim:Quantity, t_isi:Quantity, t_end:Quantity,
-        n_batches:int=1
+        n_batches:int=1, shuffle_patterns=False
     ) -> tuple[list[StimProtocol], Quantity]:
     stims = []
     current_time = t_init
     for batch in range(n_batches):
-        for i_pattern, pattern in enumerate(pattern_list.patterns):
+        pattern_copy = np.array(pattern_list.patterns)
+        if shuffle_patterns:
+            np.random.shuffle(pattern_copy)
+        for i_pattern, pattern in enumerate(pattern_copy):
             for coords in pattern.coord_list:
                 stims.append(StimProtocol(coords, StimTime(current_time, current_time+t_stim)))
             current_time += t_stim
@@ -128,17 +131,33 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
     return TimedArray(stim_array.T, dt=stim_dt)
 
 def get_pattern_time_dict(pl:PatternList, stims:list[StimProtocol]) -> dict[str,list[StimTime]]:
-    pt_dict = dict()
-    current_pattern = 1
-    for pattern in pl.patterns:
-        new_key = f'Pattern {current_pattern}'
-        current_pattern += 1
-        pt_dict[new_key] = []
 
+    pt_dict = dict()
+    time_coord_dict = dict()
+
+    for stim in stims:
+        stim_key = str(stim.stim_time)
+        if stim_key not in time_coord_dict.keys():
+            time_coord_dict[stim_key] = [stim.coords]
+        else:
+            time_coord_dict[stim_key].append(stim.coords)
+    
+    for stim_time, coords in time_coord_dict.items():
+        current_stim = None
         for stim in stims:
-            st = stim.stim_time
-            if pattern.contains(stim.coords) and st not in pt_dict[new_key]:
-                pt_dict[new_key].append(st)
+            if stim_time == str(stim.stim_time):
+                current_stim = stim.stim_time
+        for i_p, pattern in enumerate(pl.patterns):
+            match_all_coords = True
+            for coord in pattern.coord_list:
+                if coord not in coords:
+                    match_all_coords = False
+            if match_all_coords and len(pattern.coord_list) == len(coords):
+                new_key = f'Pattern {i_p + 1}'
+                if new_key not in pt_dict.keys():
+                    pt_dict[new_key] = [current_stim]
+                else:
+                    pt_dict[new_key].append(current_stim)
 
     return pt_dict
 

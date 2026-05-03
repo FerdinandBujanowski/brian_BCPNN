@@ -3,7 +3,7 @@ from brian2 import *
 fiebig_namespace = {
     't_sim': 0.1*ms,
 
-    'b': 90*pA,
+    'b': pA*40,#86,
     'tau_Iw': 280*ms,
     'C_m': 280*pF,
     'E_L': -70*mV,
@@ -11,10 +11,13 @@ fiebig_namespace = {
     'delta_T': 3*mV,
     'V_t': -55*mV,
     'V_r': -80*mV,
+    
     'tau_ref': 5*ms,
-    'U': 0.33,
 
-    'tau_rec': 500*ms,
+    'U': 0.2,
+    'tau_rec': 280*ms,
+    'tau_fac': 5*second,
+
     'tau_AMPA': 5*ms,
     'tau_NMDA': 10*ms, # 100 * ms
     'tau_GABA': 5*ms,
@@ -26,10 +29,10 @@ fiebig_namespace = {
     'kappa': 1,
 
     'w_gain_AMPA': 0.1*0.78*3.93*nS,
-    'w_gain_NMDA': 0.1*5*0.21*nS, #TODO increase x5... see if stabilizes
-    'w_gain_GABA': 0.1*3*3.93*nS,
+    'w_gain_NMDA': 0.1*5*0.21*nS,
+    'w_gain_GABA': 0.1*3.93*nS, # TODO increase if too much inter-MC competition?
 
-    'beta_gain': pA*50,
+    'beta_gain': pA*40,  
 
     'f_min': 0.5*Hz,
     'f_max': 50*Hz,
@@ -41,12 +44,13 @@ fiebig_namespace = {
     'tau_p': 1*second,
 
     't_delay': '1.5*ms + rand()*0.2*ms',
-    't_delay_long': '15*ms+rand()*4*ms',
+    't_delay_basket': '3*ms + rand()*0.5*ms',
+    't_delay_long': '15*ms+rand()*10*ms',
 
-    'intra_hc_intra_mc': 2.5, # FIXED 
+    'intra_hc_intra_mc': 3, # FIXED 
     # 'intra_hc_inter_mc': 0, # this one won't matter if no connection between diff MCs in same HC
-    'inter_hc_coactive': 2,
-    'inter_hc_competing': -2, #-0.06,
+    'inter_hc_coactive': 2.5,
+    'inter_hc_competing': -1.5, #-0.06,
 
     'p_c_intra_mc': 0.25,
 
@@ -60,13 +64,13 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'g_PB_factor': 0.15,
+    'g_PB_factor': 0.2,
     'g_PB': 3.5*nS,
     'g_BP_factor': 0.8,
     'g_BP': 20*nS,
 
     't_stim': 100*ms,
-    't_isi': 300*ms
+    't_isi': 150*ms
 }
 
 fiebig_equations = {
@@ -116,20 +120,15 @@ fiebig_equations = {
     # SPIKE TRAIN ------------------------------------
     dS/dt = -S/t_sim : 1
 
-    # AMPA TRACES ------------------------------------
-    # dZ_fast/dt = (S/(f_max*t_spike) - Z_fast + eps)/tau_z_fast : 1
-    # dE_fast/dt = (Z_fast-E_fast)/tau_e : 1
-    # dP_fast/dt = K_AMPA*(E_fast-P_fast)/tau_p : 1
-
     # NMDA TRACES ------------------------------------
     dZ/dt = (S/(f_max*t_spike) - Z + eps)/tau_z : 1
-    dE/dt = (Z-E)/tau_e : 1
-    dP/dt = kappa*(E-P)/tau_p : 1
+    # dE/dt = (Z-E)/tau_e : 1
+    dP/dt = kappa*(Z-P)/tau_p : 1
     ''',
 
     'reset_rec': '''
     V_m = V_r
-    I_w = b
+    I_w += b
     S = 1
     ''',
     'threshold_rec': 'V_m>V_t',
@@ -138,8 +137,8 @@ fiebig_equations = {
     # BCPNN SYNAPSES ---------------------------------
     'full_syn_model': '''
     # SYNAPTIC TRACES & WEIGHTS ----------------------
-    dE_syn/dt = (Z_pre*Z_post-E_syn)/tau_e : 1 (clock-driven)
-    dP_syn/dt = kappa*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    # dE_syn/dt = (Z_pre*Z_post-E_syn)/tau_e : 1 (clock-driven)
+    dP_syn/dt = kappa*(Z_pre*Z_post - P_syn)/tau_p : 1 (clock-driven)
     w = log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
 
     # CONDUCTANCES -----------------------------------
@@ -158,10 +157,12 @@ fiebig_equations = {
     # GABA -------------------------------------------
     w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
     dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
-    g_GABA_post = w_GABA * H_GABA * x : siemens (summed)
+    g_GABA_post = w_GABA * H_GABA : siemens (summed)
 
-    # DEPLETION --------------------------------------
+    # DEPRESSION -------------------------------------
     dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # FACILITATION -----------------------------------
+    # du/dt = (U-u)/tau_fac : 1 (clock-driven)
     ''',
 
     'full_syn_on_pre': '''
@@ -170,6 +171,7 @@ fiebig_equations = {
     H_GABA = 1
     x -= U * x
     ''',
+    # u -= U*(1-u)
 
     # FAST SYNAPSE MODEL -----------------------------
     # 'fast_syn_model': '''

@@ -10,13 +10,11 @@ from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-# set_device('cpp_standalone')
-
 N_H = 6
 N_M = 6
 N_pyr = 30
 N_BA = 4
-N_batches = 1
+N_batches = 2
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
@@ -63,34 +61,34 @@ for m in [synmon_mc_1, synmon_mc_2, tracemon, syn_tracemon_s1, syn_tracemon_s2]:
     model.add_monitor(m, m.name)
 
 # show minicolumns that will be studied later on
-fig, ax = plt.subplots()
-synapses.plot_connectivity(
-    ax, model.S_REC, model.N,
-    colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
-    aspect='equal'
-    )  
-plt.show()
+# fig, ax = plt.subplots()
+# synapses.plot_connectivity(
+#     ax, model.S_REC, model.N,
+#     colors=[(mc_range_i, mc_range_j1,[0,1,0]),(mc_range_i,mc_range_j2,[1,0,0])],
+#     aspect='equal'
+#     )  
+# plt.show()
 
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
 t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
-# TODO put these into param file(s)
 t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
 pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-pattern_list = stils.PatternList(pattern_list.patterns[0:1])
+# pattern_list = stils.PatternList(pattern_list.patterns[0:1])
 
 # print(",".join([str(p) for p in pattern_list.patterns]))
 
 t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.init_traces(model='zero_weight')
+model.namespace['tau_p'] = t_total
 
 # calling train_n_epochs runs the simulation
 stims, t_total = train_n_epochs(
     model, t_init, t_stim, t_isi, t_end,
     pattern_list,
-    n_batches=N_batches
+    n_batches=N_batches, shuffle_patterns=True
 )
 
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
@@ -98,7 +96,6 @@ pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 model.save_traces(f'./data/fast-slow/trained_{N_H}_{N_M}_{N_pyr}.data')
 
 # PLOTS
-fig_save_path = f'./figs/fast-slow/{N_H}_{N_M}_{N_pyr}'
 
 for n_pattern in range(len(pattern_list.patterns)):
     ax = plt.subplot(2, 3, n_pattern+1)
@@ -109,7 +106,6 @@ for n_pattern in range(len(pattern_list.patterns)):
     ax.set_xlabel('Batch')
     ax.set_ylabel('Spiking Frequency')
     ax.set_title(f'Pattern {n_pattern+1}')
-plt.savefig(f'{fig_save_path}/freqs_patterns.png')
 plt.show()
 
 composite.plot_training_protocol(
@@ -125,7 +121,6 @@ composite.plot_training_protocol(
 plt.title('weight trajectories')
 # plt.savefig(f'{fig_save_path}/training_protocol_ampa.png')
 plt.show()
-
 
 # composite.plot_bias_trajectory(
 #     model, spikemon, biasmon,
@@ -167,5 +162,5 @@ plt.show()
 fig, ax = plt.subplots()
 im = synapses.plot_weights(ax, model.S_REC, model.N)
 fig.colorbar(im, ax=ax)
-plt.title('AMPA weight matrix')
+plt.title('BCPNN weight matrix')
 plt.show()

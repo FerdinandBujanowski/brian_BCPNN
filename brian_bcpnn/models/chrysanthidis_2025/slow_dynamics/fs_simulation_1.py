@@ -24,7 +24,7 @@ t_total = 0.5 * second
 spike_freq = namespace['f_min']
 model.namespace['eps'] = spike_freq / namespace['f_max']
 # sample_filepath = f'./data/fast-slow/10_2_30_init.data'
-model.init_traces(model='zero_weight', baseline=spike_freq)
+model.init_traces(model='paper')
 model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], t_total, model.N_H, model.N_M)
 
 # TODO comment these out

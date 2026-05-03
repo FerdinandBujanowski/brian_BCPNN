@@ -9,14 +9,15 @@ def train_n_epochs(
         t_init, t_stim, t_isi, t_end,
         patterns:stils.PatternList,
         n_batches=1,
-        stim_ta_string='stim_ta'
+        stim_ta_string='stim_ta',
+        shuffle_patterns=False
 ):
     defaultclock.dt = model.namespace['t_sim']
     
     stims, t_total = stils.train_patterns_protocol(
         patterns,
         t_init, t_stim, t_isi, t_end,
-        n_batches
+        n_batches, shuffle_patterns=shuffle_patterns
     )
 
     model.namespace[stim_ta_string] = stils.stim_times_to_timed_array(
