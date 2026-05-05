@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 import scipy.stats as stats
 sys.path.append("./")
 from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_equations
-from brian_bcpnn.models.chrysanthidis_2025.fiebig_params import fiebig_equations, fiebig_namespace
+from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_equations, fiebig_namespace
 from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
@@ -129,9 +129,9 @@ class CorticalNetwork():
             self.BA, self.REC, model=eqs['syn_BP'], on_pre=eqs['basket_pyr_on_pre'], method='euler'#, delay=self.namespace['t_delay']
         )
         self.S_BP.connect(i=sB, j=tP)
-        self.S_BP.delay = self.namespace['t_delay_basket']
+        self.S_BP.delay = self.namespace['t_delay']
         self.S_PB.connect(i=sP, j=tB)
-        self.S_PB.delay = self.namespace['t_delay_basket']
+        self.S_PB.delay = self.namespace['t_delay']
         self.network.add([self.S_PB, self.S_BP])
 
         # calculate strength of basket cell conductances

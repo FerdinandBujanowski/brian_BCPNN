@@ -5,7 +5,7 @@ from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.plot import trains, synapses, composite
-from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_time
+from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils
 
 N_H = 10

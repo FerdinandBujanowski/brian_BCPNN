@@ -65,6 +65,21 @@ class PatternList:
         if j is not None:
             return PatternList(self.patterns[i:j])
         return PatternList([self.patterns[i]])
+    
+def string_to_tuple(tuple_string):
+    return (int(tuple_string[0]), int(tuple_string[1]))
+
+def pattern_string_to_tuple_list(pattern_string):
+    return sorted([string_to_tuple(s) for s in [c.replace('[', '').replace(';','').replace(']','').replace(',','') for c in pattern_string.split(' ')]])
+
+def patterns_from_txt(filepath) -> PatternList:
+    patterns = []
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
+        for line in lines:
+            tuple_list = pattern_string_to_tuple_list(line)
+            patterns.append(Pattern([ColumnCoords(h, m) for (h,m) in tuple_list]))
+    return PatternList(patterns)
 
 def get_orthogonal_patterns(N_H, N_M) -> PatternList:
     return PatternList([Pattern([ColumnCoords(h, m) for h in range(N_H)]) for m in range(N_M)])
@@ -77,6 +92,45 @@ def get_incomplete_patterns(original_patterns: PatternList, n_MC) -> PatternList
         new_list.append(Pattern(chosen_subset))
 
     return PatternList(new_list)
+
+def distort_patterns(pattern_list:PatternList, N_M, n_dist=1) -> PatternList:
+    new_patterns = []
+    # n_dist: number of hypercolumns to be resampled
+    for pattern in pattern_list.patterns:
+        columns = [ColumnCoords(c.HC, c.MC) for c in pattern.coord_list]
+        np.random.shuffle(columns)
+        for i_dist in range(n_dist):
+            new_mc = columns[i_dist].MC
+            while new_mc == columns[i_dist].MC:
+                new_mc = np.random.randint(N_M)
+            columns[i_dist].MC = new_mc
+        new_patterns.append(Pattern(columns))
+    return PatternList(new_patterns)
+
+
+def get_pattern_overlap_counts(pattern_list:PatternList) -> list[int]:
+    # for each pattern, return the number of total minicolumn overlaps with all other patterns
+    overlap_counts = []
+    for i, i_pattern in enumerate(pattern_list.patterns):
+        total_overlaps = 0
+        for j, j_pattern in enumerate(pattern_list.patterns):
+            if i != j:
+                for i_coords in i_pattern.coord_list:
+                    for j_coords in j_pattern.coord_list:
+                        if i_coords == j_coords:
+                            total_overlaps += 1
+        overlap_counts.append(total_overlaps)
+    return overlap_counts
+
+
+def get_random_patterns(N_H, N_M, N_P) -> PatternList:
+    patterns = []
+    for _ in range(N_P):
+        coord_list = []
+        for h in range(N_H):
+            coord_list.append(ColumnCoords(h, np.random.randint(N_M)))
+        patterns.append(Pattern(coord_list))
+    return PatternList(patterns)
 
 def train_patterns_protocol(
         pattern_list: PatternList, 

@@ -4,7 +4,7 @@ from brian_bcpnn.networks import CorticalNetwork
 from brian_bcpnn.plot import trains
 import brian_bcpnn.utils.stim_utils as stils
 
-def train_n_epochs(
+def cue_n_epochs(
         model:CorticalNetwork,
         t_init, t_stim, t_isi, t_end,
         patterns:stils.PatternList,
