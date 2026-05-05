@@ -191,7 +191,7 @@ class CorticalNetwork():
         MODEL_PAPER = "paper"
         model_options = [MODEL_EPS, MODEL_FILE, MODEL_ZERO_WEIGHT, MODEL_PAPER]
         if model not in model_options:
-            raise ValueError(f"Unknown initialisation model chosen. Options are {", ".join(model_options)}")
+            raise ValueError(f"Unknown initialisation model chosen. Options are {', '.join(model_options)}")
         
         eps = self.namespace['eps']
         if self.verbose:
