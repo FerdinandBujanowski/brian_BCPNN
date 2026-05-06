@@ -10,7 +10,8 @@ def cue_n_epochs(
         patterns:stils.PatternList,
         n_batches=1,
         stim_ta_string='stim_ta',
-        shuffle_patterns=False
+        shuffle_patterns=False,
+        b_neg=True
 ):
     defaultclock.dt = model.namespace['t_sim']
     
@@ -22,7 +23,8 @@ def cue_n_epochs(
 
     model.namespace[stim_ta_string] = stils.stim_times_to_timed_array(
         stims, t_total,
-        model.N_H, model.N_M
+        model.N_H, model.N_M,
+        b_neg=b_neg
     )
     model.run(t_total)
 

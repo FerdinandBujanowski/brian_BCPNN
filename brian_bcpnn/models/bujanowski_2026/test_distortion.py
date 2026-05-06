@@ -43,7 +43,7 @@ output_path=f'distortion_stats_{N_patterns}_random.csv'
 
 N_dist = 3
 
-N_runs = 880
+N_runs = 655
 for _ in tqdm(range(N_runs)):
 
     entry_list = list()
@@ -65,7 +65,7 @@ for _ in tqdm(range(N_runs)):
 
     stims, t_total = cue_n_epochs(
         model, t_start, t_stim, t_isi, t_end,
-        distorted_pattern_list, n_batches=N_batches, shuffle_patterns=False
+        distorted_pattern_list, n_batches=N_batches, shuffle_patterns=False, b_neg=False
     )
     pt_dict = stils.get_pattern_time_dict(distorted_pattern_list, stims)
     print(pt_dict)

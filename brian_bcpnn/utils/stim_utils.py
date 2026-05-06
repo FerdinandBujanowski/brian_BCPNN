@@ -160,7 +160,7 @@ def train_patterns_protocol(
 def pattern_protocol_to_stim_protocol(pattern_protocol:PatternProtocol) -> list[StimProtocol]:
     return [StimProtocol(coords, pattern_protocol.stim_time) for coords in pattern_protocol.pattern.coord_list]
 
-def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:int, N_M:int):
+def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:int, N_M:int, b_neg=True):
     times = {int(t_total/ms)}
     hc_list = []
     mc_list = []
@@ -179,7 +179,8 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
         fr = int(round(stim.stim_time.t_start/stim_dt))
         to = int(round(stim.stim_time.t_end/stim_dt))
         # set entire time slice to -1 (negative input conductance)
-        stim_array[:, fr:to] = np.where(stim_array[:, fr:to] == 0, -1, stim_array[:, fr:to])
+        if b_neg:
+            stim_array[:, fr:to] = np.where(stim_array[:, fr:to] == 0, -1, stim_array[:, fr:to])
         # reset correct MC slice to 1
         stim_array[stim.coords.HC*N_M+stim.coords.MC, fr:to] = 1
 
