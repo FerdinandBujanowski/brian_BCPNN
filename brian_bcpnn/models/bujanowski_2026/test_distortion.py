@@ -43,7 +43,7 @@ output_path=f'distortion_stats_{N_patterns}_random.csv'
 
 N_dist = 3
 
-N_runs = 1
+N_runs = 880
 for _ in tqdm(range(N_runs)):
 
     entry_list = list()
