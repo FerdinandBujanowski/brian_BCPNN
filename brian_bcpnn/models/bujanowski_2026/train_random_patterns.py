@@ -13,7 +13,7 @@ N_H = 9
 N_M = 9
 N_pyr = 30
 N_BA = 4
-N_batches = 2
+N_batches = 1
 
 N_P = 20 # amount of random patterns
 
@@ -30,7 +30,7 @@ t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
 # pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt('10_patterns.txt')
+pattern_list = stils.patterns_from_txt('20_patterns.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -50,6 +50,14 @@ plt.ylabel('Count')
 plt.title(f'MC occurence count in {N_P} random patterns')
 plt.show()
 # exit()
+
+pattern_scores = stils.get_pattern_overlap_counts(pattern_list)
+print(pattern_scores)
+unique_scores = sorted(list(np.unique(pattern_scores)))
+plt.bar(unique_scores, [pattern_scores.count(s) for s in unique_scores], width=0.9)
+plt.xlabel('Overlap Score')
+plt.ylabel('Count')
+plt.show()
 
 t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.init_traces(model='zero_weight')

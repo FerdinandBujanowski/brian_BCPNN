@@ -10,7 +10,7 @@ def gcd_list(l, o=None):
     if list_len == 0:
         if o is None:
             return 0
-        return 0
+        return o
     elif list_len == 1:
         if o is None:
             return l[0]
@@ -166,22 +166,24 @@ def stim_times_to_timed_array(stims: list[StimProtocol], t_total:Quantity, N_H:i
     mc_list = []
     for stim in stims:
         stim_time = stim.stim_time
-        times.add(int(stim_time.t_start/ms))
-        times.add(int(stim_time.t_end/ms))
+        times.add(int(round(stim_time.t_start/ms)))
+        times.add(int(round(stim_time.t_end/ms)))
         hc_list.append(stim.coords.HC)
         mc_list.append(stim.coords.MC)
 
     stim_dt = gcd_list(list(times))*ms
-    # print(stim_dt)
     n_time_steps = int(t_total/stim_dt)
 
     stim_array = np.zeros(shape=(N_H*N_M,n_time_steps),dtype=int32)
     for stim in stims:
         fr = int(round(stim.stim_time.t_start/stim_dt))
         to = int(round(stim.stim_time.t_end/stim_dt))
+        # set entire time slice to -1 (negative input conductance)
+        stim_array[:, fr:to] = np.where(stim_array[:, fr:to] == 0, -1, stim_array[:, fr:to])
+        # reset correct MC slice to 1
         stim_array[stim.coords.HC*N_M+stim.coords.MC, fr:to] = 1
 
-    # print(stim_array.T)
+    # print(stim_array.T[2])
     return TimedArray(stim_array.T, dt=stim_dt)
 
 def get_pattern_time_dict(pl:PatternList, stims:list[StimProtocol]) -> dict[str,list[StimTime]]:
@@ -215,8 +217,24 @@ def get_pattern_time_dict(pl:PatternList, stims:list[StimProtocol]) -> dict[str,
 
     return pt_dict
 
-# test_protocol = [
-#     StimProtocol(ColumnCoords(0, 0), 250*ms, 350*ms),
-#     StimProtocol(ColumnCoords(1, 1), 300*ms, 400*ms)
-#     ]
-# ta = stim_times_to_timed_array(test_protocol, 5*second, 4, 2)
+def get_mc_occurences(pattern_list:PatternList, N_H:int, N_M:int):
+    column_list = []
+    occ_list = []
+    for pattern in pattern_list.patterns:
+        for coords in pattern.coord_list:
+            column_list.append(f'{coords.HC}{coords.MC}')
+    for h in range(N_H):
+        for m in range(N_M):
+            occ_list.append(column_list.count(f'{h}{m}'))
+
+    return column_list, occ_list
+
+def get_pattern_overlap_scores(pattern_list:PatternList, N_H:int, N_M:int):
+    column_list, _ = get_mc_occurences(pattern_list, N_H, N_M)
+
+    score_list = []
+    for pattern in pattern_list.patterns:
+        score = sum([column_list.count(f'{coords.HC}{coords.MC}') for coords in pattern.coord_list])
+        score_list.append(int(score))
+
+    return score_list

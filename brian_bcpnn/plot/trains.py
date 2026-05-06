@@ -11,7 +11,7 @@ import brian_bcpnn.utils.spike_utils as spils
 pattern_cmap = mpl.colormaps['viridis']
 # cmap((1+i)/(len(pt_dict)+1))
 
-def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr=0, to=None):
+def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr=0, to=None, model=None):
     max_N = N if to is None else to
     t_array, i_array = [], []
     for t, i in zip(spikemon.t, spikemon.i):
@@ -24,7 +24,8 @@ def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr
     ax.set_xlim(0, t_total/t_div)
     ax.set_ylim(fr, max_N)
     ax.set_ylabel('# neuron')
-    ax.set_yticks(list(range(fr, max_N, 180)))
+    neurons_per_hc = 180 if model == None else model.N_M * model.N_pyr
+    ax.set_yticks(list(range(fr, max_N, neurons_per_hc)))
     ax.grid(axis='y')
     
     if x_label is not None:

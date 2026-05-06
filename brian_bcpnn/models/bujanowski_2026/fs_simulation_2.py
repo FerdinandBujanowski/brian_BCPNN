@@ -10,8 +10,8 @@ from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_ti
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-N_H = 9
-N_M = 9
+N_H = 6
+N_M = 6
 N_pyr = 30
 N_BA = 2
 N_batches = 1

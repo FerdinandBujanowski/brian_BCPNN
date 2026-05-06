@@ -29,9 +29,9 @@ fiebig_namespace = {
     'kappa': 1,
 
     'b_recurrence': 1,
-    'w_gain_AMPA': 0.1*0.78*3.93*nS,
-    'w_gain_NMDA': 0.1*5*0.21*nS,
-    'w_gain_GABA': 0.1*2*3.93*nS, # TODO increase if too much inter-MC competition?
+    'w_gain_AMPA': 0.2*0.78*3.93*nS,
+    'w_gain_NMDA': 0.2*5*0.21*nS,
+    'w_gain_GABA': 0.5*3*3.93*nS, # TODO increase if too much inter-MC competition?
 
     'beta_gain': pA*40,  
 
@@ -65,7 +65,7 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'g_PB_factor': 0.2,
+    'g_PB_factor': 0.15,
     'g_PB': 3.5*nS,
     'g_BP_factor': 0.8,
     'g_BP': 20*nS,

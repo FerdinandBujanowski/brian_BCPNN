@@ -49,7 +49,7 @@ def plot_training_protocol(
     fig.tight_layout()
 
 def plot_spike_train_with_patterns(ax, spikemon, model, t_total, t_div, pt_dict):
-    trains.get_full_train(ax, spikemon, model.N, t_total, t_div=t_div)
+    trains.get_full_train(ax, spikemon, model.N, t_total, t_div=t_div, model=model)
     if pt_dict is not None:
         # cmap((1+i)/(len(pt_dict)+1))
         for i, pattern_key in enumerate(pt_dict.keys()):

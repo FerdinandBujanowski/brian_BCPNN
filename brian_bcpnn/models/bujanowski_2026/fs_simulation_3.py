@@ -10,13 +10,14 @@ import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.spike_utils as spils
 
 N_H = 9
-N_M = 6
+N_M = 9
 N_pyr = 30
 N_BA = 4
 N_batches = 1
 
 b_from_file = True
-filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'
+# filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'
+filepath = f'./data/random_patterns/trained_9_9_30_overlap_20_random_1b.data'
 
 model = None
 if b_from_file:
@@ -24,26 +25,29 @@ if b_from_file:
 else:
     model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
-model.namespace['kappa'] = 0
-
 basmon = model.add_basmon()
 spikemon = model.add_spikemon()
 curmon = model.add_statemon(variables=['I_beta', 'I_noise', 'I_AMPA', 'I_NMDA', 'I_GABA', 'I_w', 'I_stim'], record=list(range(30)))
 curmon_2 = model.add_statemon(variables=['I_beta', 'I_noise', 'I_AMPA', 'I_NMDA', 'I_GABA', 'I_w', 'I_stim'], record=list(range(30, 60)))
 
 defaultclock.dt = model.namespace['t_sim']
-t_start = 100 * ms
+t_start = 50 * ms
 t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 N_batches = 1
 
-pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
+# pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
+pattern_list = stils.patterns_from_txt('20_patterns.txt')
 pattern_list = stils.PatternList(pattern_list.patterns[0:2])
 # pattern_list = stils.get_incomplete_patterns(pattern_list, 1)
 
+# get pattern "overlap score" histogram
+
 t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.namespace['tau_p'] = t_total
+model.namespace['b'] = 30 * pA # to make attractors last shorter
+model.namespace['kappa'] = 0
 
 if not b_from_file:
     model.init_traces(model='paper')
@@ -53,6 +57,11 @@ stims, t_total = cue_n_epochs(
     pattern_list, n_batches=N_batches
 )
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
+
+fig, ax = plt.subplots()
+composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+ax.set_xlabel(f'Time/{second}')
+plt.show()
 
 fig, [ax1, ax2, ax3] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (3, 2, 2)})
 composite.plot_ba_pyr_as_one(ax1, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
@@ -112,11 +121,11 @@ plt.show()
 # plt.show()
 
 # minicolumn average weight matrix
-fig, ax = plt.subplots()
-im = synapses.plot_weight_matrix_averages(ax, model)
-fig.colorbar(im, ax=ax)
-plt.title('Average minicolumn weights')
-plt.show()
+# fig, ax = plt.subplots()
+# im = synapses.plot_weight_matrix_averages(ax, model)
+# fig.colorbar(im, ax=ax)
+# plt.title('Average minicolumn weights')
+# plt.show()
 
 # fig, [ax1, ax2] = plt.subplots(1, 2)
 # trains.get_spiking_histogram(ax1, spikemon, model.N, t_start=t_start+t_stim, t_stop=t_start+2*t_stim)
