@@ -33,9 +33,9 @@ def plot_training_protocol(
         N_batches, t_total, t_div=second,
         pt_dict:dict[str,list[StimTime]]=None
     ):
-    fig, [ax0, ax1, ax2] = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': (1, 4, 4)})
+    fig, [ax1, ax2] = plt.subplots(2, 1, sharex=True)
 
-    plot_ba_pyr_trains(ax0, ax1, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict)
+    plot_ba_pyr_as_one(ax1, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict)
 
     for (synmon, syn_indices, color, label) in syn_list:
         synapses.plot_weight_trajectory(

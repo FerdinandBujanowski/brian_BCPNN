@@ -13,7 +13,10 @@ RS = 'reconstr_success'
 OP = 'original_pattern'
 DP = 'distorted_pattern'
 
-df = pd.read_csv('distortion_stats.csv')
+PATH = 'distortion_stats.csv'
+PATH = 'distortion_stats_10_random.csv'
+
+df = pd.read_csv(PATH)
 
 # turn all original patterns into sorted list of int tuples (instead of strings)
 df[OP] = [pattern_string_to_tuple_list(s) for s in df[OP]]
@@ -52,6 +55,8 @@ df['OP_occ'] = [get_pattern_occurence_score(original_patterns[i]) for i in df[OP
 
 # create new column: distorted pattern occurence score
 df['DP_occ'] = [get_pattern_occurence_score(p) for p in df[DP]]
+
+print(df.head())
 
 unique_n_overlaps = list(np.unique(df[NO]))
 unique_N_dist = sorted(list(np.unique(df[ND])))

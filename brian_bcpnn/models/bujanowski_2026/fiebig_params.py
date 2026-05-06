@@ -258,7 +258,7 @@ fiebig_equations = {
     ''',
     'syn_BP': '''
     dH_BA/dt = -H_BA/tau_GABA : 1 (clock-driven)
-    g_BA_post = H_BA * g_BP_factor * g_BP : siemens (summed)
+    g_BA_post = b_recurrence * H_BA * g_BP_factor * g_BP : siemens (summed)
     ''',
     'reset_ba': '''
     V_m = V_r

@@ -9,13 +9,13 @@ from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_ti
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-N_H = 6
-N_M = 6
+N_H = 9
+N_M = 9
 N_pyr = 30
 N_BA = 4
 N_batches = 2
 
-N_P = 10 # amount of random patterns
+N_P = 20 # amount of random patterns
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 

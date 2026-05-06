@@ -46,10 +46,10 @@ output_path='distortion_stats_10_random.csv'
 N_dist_weight = [1, 2, 3, 3, 1]
 N_dist_freq = np.array(N_dist_weight) / sum(N_dist_weight)
 
-N_runs = 1
+N_runs = 30
 for _ in tqdm(range(N_runs)):
 # for N_dist in tqdm(range(N_M)):
-    N_iter = 1
+    N_iter = 3
     N_dist = np.random.choice(range(5), p=N_dist_freq)
     print(f'Running {N_iter} simulations for N_dist={N_dist}')
     for _ in range(N_iter):

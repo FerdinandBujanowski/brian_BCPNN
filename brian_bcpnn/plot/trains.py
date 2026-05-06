@@ -22,7 +22,7 @@ def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr
     # spikemon.t, spikemon.i
     ax.scatter(t_array/t_div, i_array, marker='_', color=c, s=10)
     ax.set_xlim(0, t_total/t_div)
-    ax.set_ylim(fr-0.5, max_N)
+    ax.set_ylim(fr, max_N)
     ax.set_ylabel('# neuron')
     ax.set_yticks(list(range(fr, max_N, 180)))
     ax.grid(axis='y')

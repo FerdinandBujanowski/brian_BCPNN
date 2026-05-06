@@ -11,8 +11,8 @@ from brian_bcpnn.plot import trains, synapses
 from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_namespace, fiebig_equations
 import brian_bcpnn.utils.stim_utils as stils
 
-N_H = 6
-N_M = 6
+N_H = 9
+N_M = 9
 N_BA = 4
 N_PYR = 30
 model = TwoSynTypeNetwork(N_H, N_M, N_PYR, N_BA)

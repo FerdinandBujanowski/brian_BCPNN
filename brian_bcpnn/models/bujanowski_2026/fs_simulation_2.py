@@ -10,11 +10,11 @@ from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_ti
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-N_H = 6
-N_M = 6
+N_H = 9
+N_M = 9
 N_pyr = 30
-N_BA = 4
-N_batches = 2
+N_BA = 2
+N_batches = 1
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
@@ -83,6 +83,8 @@ pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
 t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.init_traces(model='zero_weight')
 model.namespace['tau_p'] = t_total
+# TURN OFF RECURRENCE
+model.namespace['b_recurrence'] = 0
 
 # calling train_n_epochs runs the simulation
 stims, t_total = cue_n_epochs(
@@ -93,20 +95,20 @@ stims, t_total = cue_n_epochs(
 
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 
-model.save_traces(f'./data/fast-slow/trained_{N_H}_{N_M}_{N_pyr}.data')
+model.save_traces(f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data')
 
 # PLOTS
 
-for n_pattern in range(len(pattern_list.patterns)):
-    ax = plt.subplot(2, 3, n_pattern+1)
-    trains.get_active_freqs_per_batch(
-        ax,
-        spikemon, n_pattern, model.N_M, model.N_pyr, pattern_list, pt_dict
-    )
-    ax.set_xlabel('Batch')
-    ax.set_ylabel('Spiking Frequency')
-    ax.set_title(f'Pattern {n_pattern+1}')
-plt.show()
+# for n_pattern in range(len(pattern_list.patterns)):
+#     ax = plt.subplot(2, 3, n_pattern+1)
+#     trains.get_active_freqs_per_batch(
+#         ax,
+#         spikemon, n_pattern, model.N_M, model.N_pyr, pattern_list, pt_dict
+#     )
+#     ax.set_xlabel('Batch')
+#     ax.set_ylabel('Spiking Frequency')
+#     ax.set_title(f'Pattern {n_pattern+1}')
+# plt.show()
 
 composite.plot_training_protocol(
     model, basmon, spikemon,
@@ -160,7 +162,7 @@ plt.show()
 
 # AMPA weight matrix
 fig, ax = plt.subplots()
-im = synapses.plot_weights(ax, model.S_REC, model.N)
+im = synapses.plot_weight_matrix_averages(ax, model)
 fig.colorbar(im, ax=ax)
-plt.title('BCPNN weight matrix')
+plt.title('Average minicolumn weights')
 plt.show()
