@@ -18,7 +18,7 @@ tully_namespace = {
     # CHANNEL MODEL
    # 'tau_z': 5 * ms, # Z trace time constant, 10 normally
     'tau_z_i': 5*ms,
-    'tau_z_j': 5*ms,
+    'tau_z_j': 2*ms,
     # 'tau_z': 10 * ms # normally in the model 
     'tau_e': 100 * ms, # E trace time constant
     'tau_p': 10000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
