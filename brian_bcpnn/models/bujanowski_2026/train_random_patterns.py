@@ -30,7 +30,7 @@ t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
 pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-# pattern_list = stils.patterns_from_txt('20_patterns.txt')
+pattern_list = stils.patterns_from_txt('20_random_patterns_patterns_3.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -44,20 +44,20 @@ for h in range(N_H):
 
 unique_occs = sorted(list(np.unique(occ_list)))
 
-plt.bar(unique_occs, [occ_list.count(o) for o in unique_occs], width=0.9)
-plt.xlabel('# of occurences')
-plt.ylabel('Count')
-plt.title(f'MC occurence count in {N_P} random patterns')
-plt.show()
+# plt.bar(unique_occs, [occ_list.count(o) for o in unique_occs], width=0.9)
+# plt.xlabel('# of occurences')
+# plt.ylabel('Count')
+# plt.title(f'MC occurence count in {N_P} random patterns')
+# plt.show()
 # exit()
 
-pattern_scores = stils.get_pattern_overlap_counts(pattern_list)
-print(pattern_scores)
-unique_scores = sorted(list(np.unique(pattern_scores)))
-plt.bar(unique_scores, [pattern_scores.count(s) for s in unique_scores], width=0.9)
-plt.xlabel('Overlap Score')
-plt.ylabel('Count')
-plt.show()
+# pattern_scores = stils.get_pattern_overlap_counts(pattern_list)
+# print(pattern_scores)
+# unique_scores = sorted(list(np.unique(pattern_scores)))
+# plt.bar(unique_scores, [pattern_scores.count(s) for s in unique_scores], width=0.9)
+# plt.xlabel('Overlap Score')
+# plt.ylabel('Count')
+# plt.show()
 
 t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.init_traces(model='zero_weight')
@@ -90,14 +90,14 @@ model.save_traces(f'./data/random_patterns/trained_{N_H}_{N_M}_{N_pyr}_overlap_{
 # PLOTS
 
 # composite spike train
-fig, ax = plt.subplots()
-composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-ax.set_xlabel('Time/s')
-plt.show()
+# fig, ax = plt.subplots()
+# composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+# ax.set_xlabel('Time/s')
+# plt.show()
 
-# minicolumn average weight matrix
-fig, ax = plt.subplots()
-im = synapses.plot_weight_matrix_averages(ax, model)
-fig.colorbar(im, ax=ax)
-plt.title('Average minicolumn weights')
-plt.show()
+# # minicolumn average weight matrix
+# fig, ax = plt.subplots()
+# im = synapses.plot_weight_matrix_averages(ax, model)
+# fig.colorbar(im, ax=ax)
+# plt.title('Average minicolumn weights')
+# plt.show()

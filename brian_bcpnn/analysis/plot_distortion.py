@@ -19,7 +19,8 @@ MC_DP = 'max_common_DP'
 MC_DP_i = 'max_common_DP_i'
 
 # PATH = 'distortion_stats.csv'
-PATH = '20_random_patterns/stats_1.csv'
+BATCH = 2
+PATH = f'20_random_patterns/stats_{BATCH}.csv'
 
 df = pd.read_csv(PATH)
 
@@ -63,11 +64,13 @@ df[OP_i] = pattern_indices
 unique_pattern_indices = np.array(list(np.unique(pattern_indices)))
 
 # plot histogram of pattern index distribution in dataset
-# plt.bar(range(20), [pattern_indices.count(i) for i in range(20)])
-# plt.xlabel('Pattern index')
-# plt.ylabel('Count in dataset')
-# plt.xticks(np.arange(0, 20, 5))
-# plt.show()
+pattern_counts = [pattern_indices.count(i) for i in range(20)]
+min_pattern_count = min(pattern_counts)
+plt.bar(range(20), pattern_counts)
+plt.xlabel('Pattern index')
+plt.ylabel('Count in dataset')
+plt.xticks(np.arange(0, 20, 5))
+plt.show()
 
 # create new column: original pattern occurence score
 df['OP_occ'] = [get_pattern_occurence_score(original_patterns[i]) for i in df[OP_i]]
@@ -166,7 +169,7 @@ print(df_success['MC_OP_times'].describe())
 df_no_success = df_no_pattern_tuples[df[RS] == False]
 print(df_no_success['MC_OP_times'].describe())
 
-def sample_and_plot_success_rate(prop, ax, df=df_no_pattern_tuples, pattern_length=20, N_iter=20, sample_size=15):
+def sample_and_plot_success_rate(prop, ax, df=df_no_pattern_tuples, pattern_length=20, N_iter=30, sample_size=min_pattern_count):
     all_prop = []
     for i_pattern in unique_pattern_indices:
         all_prop.append(int(df[df[OP_i]==i_pattern][prop].iloc[0]))
