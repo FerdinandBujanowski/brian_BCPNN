@@ -31,7 +31,7 @@ fiebig_namespace = {
     'b_recurrence': 1,
     'w_gain_AMPA': 0.2*0.78*3.93*nS,
     'w_gain_NMDA': 0.2*5*0.21*nS,
-    'w_gain_GABA': 0.5*3*3.93*nS, # TODO increase if too much inter-MC competition?
+    'w_gain_GABA': 0.2*1*3.93*nS, # TODO increase if too much inter-MC competition?
 
     'beta_gain': pA*40,  
 

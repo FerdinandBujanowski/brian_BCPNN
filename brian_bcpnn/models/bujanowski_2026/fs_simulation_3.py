@@ -38,7 +38,7 @@ t_end = 100 * ms
 N_batches = 1
 
 # pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-pattern_list = stils.patterns_from_txt('20_patterns.txt')
+pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_2.txt')
 pattern_list = stils.PatternList(pattern_list.patterns[0:2])
 # pattern_list = stils.get_incomplete_patterns(pattern_list, 1)
 
@@ -54,7 +54,7 @@ if not b_from_file:
 
 stims, t_total = cue_n_epochs(
     model, t_start, t_stim, t_isi, t_end,
-    pattern_list, n_batches=N_batches
+    pattern_list, n_batches=N_batches, b_neg=False
 )
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 

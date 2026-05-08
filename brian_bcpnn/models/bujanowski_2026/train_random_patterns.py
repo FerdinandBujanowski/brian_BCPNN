@@ -29,8 +29,8 @@ t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
 t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
-# pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt('20_patterns.txt')
+pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
+# pattern_list = stils.patterns_from_txt('20_patterns.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
