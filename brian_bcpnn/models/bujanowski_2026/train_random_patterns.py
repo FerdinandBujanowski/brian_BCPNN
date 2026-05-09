@@ -29,8 +29,8 @@ t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
 t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
-pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_3.txt')
+# pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
+pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_4.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -44,12 +44,11 @@ for h in range(N_H):
 
 unique_occs = sorted(list(np.unique(occ_list)))
 
-# plt.bar(unique_occs, [occ_list.count(o) for o in unique_occs], width=0.9)
-# plt.xlabel('# of occurences')
-# plt.ylabel('Count')
-# plt.title(f'MC occurence count in {N_P} random patterns')
-# plt.show()
-# exit()
+plt.bar(unique_occs, [occ_list.count(o) for o in unique_occs], width=0.9)
+plt.xlabel('# of occurences')
+plt.ylabel('Count')
+plt.title(f'MC occurence count in {N_P} random patterns')
+plt.show()
 
 # pattern_scores = stils.get_pattern_overlap_counts(pattern_list)
 # print(pattern_scores)
@@ -95,9 +94,9 @@ model.save_traces(f'./data/random_patterns/trained_{N_H}_{N_M}_{N_pyr}_overlap_{
 # ax.set_xlabel('Time/s')
 # plt.show()
 
-# # minicolumn average weight matrix
-# fig, ax = plt.subplots()
-# im = synapses.plot_weight_matrix_averages(ax, model)
-# fig.colorbar(im, ax=ax)
-# plt.title('Average minicolumn weights')
-# plt.show()
+# minicolumn average weight matrix
+fig, ax = plt.subplots()
+im = synapses.plot_weight_matrix_averages(ax, model)
+fig.colorbar(im, ax=ax)
+plt.title('Average minicolumn weights')
+plt.show()

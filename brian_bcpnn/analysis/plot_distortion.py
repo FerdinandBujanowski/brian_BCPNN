@@ -6,7 +6,6 @@ import sys
 sys.path.append("./")
 from brian_bcpnn.utils.stim_utils import pattern_string_to_tuple_list
 
-
 ND = 'N_dist'
 # NO = 'N_overlaps' # doesn't exist yet
 RS = 'reconstr_success'
@@ -19,7 +18,7 @@ MC_DP = 'max_common_DP'
 MC_DP_i = 'max_common_DP_i'
 
 # PATH = 'distortion_stats.csv'
-BATCH = 2
+BATCH = 3
 PATH = f'20_random_patterns/stats_{BATCH}.csv'
 
 df = pd.read_csv(PATH)

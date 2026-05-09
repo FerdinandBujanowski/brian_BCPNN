@@ -31,7 +31,7 @@ t_end = 100 * ms
 # pattern_list.patterns[3].coord_list[4] = stils.ColumnCoords(4, 4)
 # pattern_list.patterns[3].coord_list[5] = stils.ColumnCoords(5, 5)
 # pattern_list.patterns[5].coord_list[3] = stils.ColumnCoords(3, 4)
-BATCH = 3
+BATCH = 4
 
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
 N_patterns = len(pattern_list.patterns)
