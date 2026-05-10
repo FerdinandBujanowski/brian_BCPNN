@@ -18,7 +18,7 @@ MC_DP = 'max_common_DP'
 MC_DP_i = 'max_common_DP_i'
 
 # PATH = 'distortion_stats.csv'
-BATCH = 3
+BATCH = 4
 PATH = f'20_random_patterns/stats_{BATCH}.csv'
 
 df = pd.read_csv(PATH)

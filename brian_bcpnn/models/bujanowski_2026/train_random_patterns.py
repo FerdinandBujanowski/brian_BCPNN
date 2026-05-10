@@ -29,8 +29,8 @@ t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
 t_init, t_end = 100*ms, 100*ms
 
 # calculating eps from total number of timesteps
-# pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_4.txt')
+pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
+# pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_4.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -65,18 +65,11 @@ model.namespace['tau_p'] = t_total
 # TURN OFF RECURRENCE
 model.namespace['b_recurrence'] = 0
 
-# TODO this is just for debugging pt_dict
-# stims, t_total = stils.train_patterns_protocol(
-#         pattern_list,
-#         t_init, t_stim, t_isi, t_end,
-#         N_batches, shuffle_patterns=True
-#     )
-
 # calling train_n_epochs runs the simulation
 stims, t_total = cue_n_epochs(
     model, t_init, t_stim, t_isi, t_end,
     pattern_list,
-    n_batches=N_batches, shuffle_patterns=True
+    n_batches=N_batches, shuffle_patterns=False
 )
 
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)

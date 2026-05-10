@@ -65,10 +65,10 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'g_PB_factor': 0.15,
-    'g_PB': 3.5*nS,
-    'g_BP_factor': 0.8,
-    'g_BP': 20*nS,
+    'G_PB_factor': 0.15,
+    'G_PB': 3.5*nS,
+    'G_BP_factor': 0.8,
+    'G_BP': 20*nS,
 
     't_stim': 100*ms,
     't_isi': 150*ms
@@ -99,8 +99,8 @@ fiebig_equations = {
     I_NMDA = (g_NMDA + g_MC_NMDA) * (V_m - E_NMDA) : amp 
     # ------------------------------------------------
     g_GABA : siemens # SUM OVER ALL FAST SYNAPSES
-    g_BA : siemens # SUM OVER ALL BASKET-PYR SYNAPSES
-    I_GABA = (g_GABA + g_BA) * (V_m - E_GABA) : amp 
+    g_BP : siemens # SUM OVER ALL BASKET-PYR SYNAPSES
+    I_GABA = (g_GABA + g_BP) * (V_m - E_GABA) : amp 
     # ------------------------------------------------
     I_syn = I_AMPA + I_NMDA + I_GABA : amp
 
@@ -247,26 +247,25 @@ fiebig_equations = {
         - g_L*(V_m-E_L_BA) 
         - I_syn
     )/C_m : volt (unless refractory)
-    g_ex : siemens # SUMMED
-    # dg_ex/dt = -g_ex/tau_AMPA : siemens
-    I_syn = g_ex*(V_m-E_AMPA) : amp
+    g_PB : siemens # SUMMED
+    I_syn = g_PB*(V_m-E_AMPA) : amp
     ''',
 
     'syn_PB': '''
-    dH_ex/dt = -H_ex/tau_AMPA : 1 (clock-driven)
-    g_ex_post = H_ex * g_PB_factor * g_PB : siemens (summed)
+    dH_PB/dt = -H_PB/tau_AMPA : 1 (clock-driven)
+    g_PB_post = H_PB * G_PB_factor * G_PB : siemens (summed)
     ''',
     'syn_BP': '''
-    dH_BA/dt = -H_BA/tau_GABA : 1 (clock-driven)
-    g_BA_post = b_recurrence * H_BA * g_BP_factor * g_BP : siemens (summed)
+    dH_BP/dt = -H_BP/tau_GABA : 1 (clock-driven)
+    g_BP_post = b_recurrence * H_BP * G_BP_factor * G_BP : siemens (summed)
     ''',
     'reset_ba': '''
     V_m = V_r
     ''',
     'pyr_basket_on_pre': '''
-    H_ex = 1
+    H_PB = 1
     ''',
     'basket_pyr_on_pre': '''
-    H_BA = 1
+    H_BP = 1
     '''
     }
