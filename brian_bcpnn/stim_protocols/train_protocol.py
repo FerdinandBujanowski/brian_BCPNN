@@ -33,7 +33,6 @@ def cue_n_epochs(
 def get_total_time(t_init, t_stim, t_isi, t_end, n_batches=1, n_patterns=1):
     return (
         + t_init
-        + n_patterns * (n_batches*t_stim
-        + max(n_batches-1,0)*t_isi)
+        + n_batches * (n_patterns * (t_stim + t_isi))
         + t_end
     )

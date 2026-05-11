@@ -12,13 +12,15 @@ import brian_bcpnn.utils.spike_utils as spils
 N_H = 9
 N_M = 9
 N_pyr = 30
-N_BA = 2
+N_BA = 4
 # TODO test if N_BA=2 vs. N_BA=4 makes a difference
 N_batches = 1
 
+BATCH = 6
+
 b_from_file = True
 # filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'
-filepath = f'./data/random_patterns/trained_9_9_30_overlap_20_random_1b.data'
+filepath = f'./data/random_patterns/20_random_weights_{BATCH}.data'
 
 model = None
 if b_from_file:
@@ -39,7 +41,7 @@ t_end = 100 * ms
 N_batches = 1
 
 # pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_2.txt')
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
 pattern_list = stils.PatternList(pattern_list.patterns[0:2])
 # pattern_list = stils.get_incomplete_patterns(pattern_list, 1)
 

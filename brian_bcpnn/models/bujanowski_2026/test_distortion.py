@@ -13,7 +13,6 @@ import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.spike_utils as spils
 from tqdm import tqdm
 
-fp = f'./data/random_patterns/trained_9_9_30_overlap_20_random_1b.data'
 
 N_H = 9
 N_M = 9
@@ -27,12 +26,9 @@ t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 
-# pattern_list = stils.get_orthogonal_patterns(N_H, N_M)
-# pattern_list.patterns[3].coord_list[4] = stils.ColumnCoords(4, 4)
-# pattern_list.patterns[3].coord_list[5] = stils.ColumnCoords(5, 5)
-# pattern_list.patterns[5].coord_list[3] = stils.ColumnCoords(3, 4)
-BATCH = 5
+BATCH = 6
 
+fp = f'./data/random_patterns/20_random_weights_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
 N_patterns = len(pattern_list.patterns)
 
@@ -45,7 +41,7 @@ output_path=f'20_random_patterns/stats_{BATCH}.csv'
 
 N_dist = 3
 
-N_runs = 200 # make it 200 after testing
+N_runs = 1 # make it 200 after testing
 for _ in tqdm(range(N_runs)):
 
     entry_list = list()
@@ -90,7 +86,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    # fig, ax = plt.subplots()
-    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    # ax.set_xlabel(f'Time/{second}')
-    # plt.show()
+    fig, ax = plt.subplots()
+    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    ax.set_xlabel(f'Time/{second}')
+    plt.show()

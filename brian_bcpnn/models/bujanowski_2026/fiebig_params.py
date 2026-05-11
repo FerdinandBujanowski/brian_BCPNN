@@ -19,7 +19,7 @@ fiebig_namespace = {
     'tau_fac': 5*second,
 
     'tau_AMPA': 5*ms,
-    'tau_NMDA': 10*ms, # 100 * ms
+    'tau_NMDA': 20*ms,
     'tau_GABA': 5*ms,
     'E_AMPA': 0*mV,
     'E_NMDA': 0*mV,
@@ -31,7 +31,7 @@ fiebig_namespace = {
     'b_recurrence': 1,
     'w_gain_AMPA': 0.2*0.78*3.93*nS,
     'w_gain_NMDA': 0.2*5*0.21*nS,
-    'w_gain_GABA': 0.2*1*3.93*nS, # TODO increase if too much inter-MC competition?
+    'w_gain_GABA': 0.2*2.5*3.93*nS, # TODO increase if too much inter-MC competition?
 
     'beta_gain': pA*40,  
 
@@ -40,7 +40,7 @@ fiebig_namespace = {
     'eps': 0.01,
     't_spike': 0.1*ms,
 
-    'tau_z': 10*ms,
+    'tau_z': 20*ms,
     'tau_e': 100*ms,
     'tau_p': 1*second,
 

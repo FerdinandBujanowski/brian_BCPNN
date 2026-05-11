@@ -122,7 +122,6 @@ def get_pattern_overlap_counts(pattern_list:PatternList) -> list[int]:
         overlap_counts.append(total_overlaps)
     return overlap_counts
 
-
 def get_random_patterns(N_H, N_M, N_P) -> PatternList:
     patterns = []
     for _ in range(N_P):
@@ -131,6 +130,19 @@ def get_random_patterns(N_H, N_M, N_P) -> PatternList:
             coord_list.append(ColumnCoords(h, np.random.randint(N_M)))
         patterns.append(Pattern(coord_list))
     return PatternList(patterns)
+
+# TODO fix this
+# def get_partially_random_patterns(N_H, N_M, N_P, N_O) -> PatternList:
+#     patterns = []
+#     for _ in range(N_P):
+#         coord_list = []
+#         for h in range(N_H):
+#             if h < N_O:
+#                 coord_list.append(ColumnCoords(h, h))
+#             else:
+#                 coord_list.append(ColumnCoords(h, np.random.randint(N_M)))
+#         patterns.append(Pattern(coord_list))
+#     return PatternList(patterns)
 
 def train_patterns_protocol(
         pattern_list: PatternList, 
@@ -143,12 +155,10 @@ def train_patterns_protocol(
         pattern_copy = np.array(pattern_list.patterns)
         if shuffle_patterns:
             np.random.shuffle(pattern_copy)
-        for i_pattern, pattern in enumerate(pattern_copy):
+        for pattern in pattern_copy:
             for coords in pattern.coord_list:
                 stims.append(StimProtocol(coords, StimTime(current_time, current_time+t_stim)))
-            current_time += t_stim
-            if i_pattern < (len(pattern_list.patterns) - 1):
-                current_time += t_isi
+            current_time += t_stim + t_isi
 
         if batch < (n_batches-1):
             current_time += t_isi

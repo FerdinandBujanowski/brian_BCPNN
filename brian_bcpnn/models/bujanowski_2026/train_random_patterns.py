@@ -17,6 +17,8 @@ N_batches = 1
 
 N_P = 20 # amount of random patterns
 
+N_BATCH = 6
+
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
 # default spike monitors
@@ -26,11 +28,11 @@ basmon = model.add_basmon()
 namespace = model.namespace
 defaultclock.dt = namespace['t_sim']
 t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
-t_init, t_end = 100*ms, 100*ms
+t_init, t_end = 100*ms, 0*ms
 
 # calculating eps from total number of timesteps
 pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-# pattern_list = stils.patterns_from_txt('20_random_patterns/patterns_4.txt')
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{N_BATCH}.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -77,7 +79,7 @@ pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 # print(pt_dict)
 
 # exit()
-model.save_traces(f'./data/random_patterns/trained_{N_H}_{N_M}_{N_pyr}_overlap_{N_P}_random_{N_batches}b.data')
+model.save_traces(f'./data/random_patterns/20_random_weights_{N_BATCH}.data')
 
 # PLOTS
 
