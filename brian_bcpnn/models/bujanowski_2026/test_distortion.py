@@ -41,7 +41,7 @@ output_path=f'20_random_patterns/stats_{BATCH}.csv'
 
 N_dist = 3
 
-N_runs = 1 # make it 200 after testing
+N_runs = 200 # make it 200 after testing
 for _ in tqdm(range(N_runs)):
 
     entry_list = list()
@@ -86,7 +86,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    fig, ax = plt.subplots()
-    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    ax.set_xlabel(f'Time/{second}')
-    plt.show()
+    # fig, ax = plt.subplots()
+    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    # ax.set_xlabel(f'Time/{second}')
+    # plt.show()
