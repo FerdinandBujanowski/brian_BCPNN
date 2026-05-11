@@ -65,7 +65,7 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'G_PB_factor': 0.15,
+    'G_PB_factor': 2*0.15,
     'G_PB': 3.5*nS,
     'G_BP_factor': 0.8,
     'G_BP': 20*nS,

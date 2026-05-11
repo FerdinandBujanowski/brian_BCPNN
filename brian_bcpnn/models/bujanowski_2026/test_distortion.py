@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 N_H = 9
 N_M = 9
-N_pyr = 30
+N_pyr = 15
 N_BA = 2
 N_batches = 1
 
@@ -26,7 +26,7 @@ t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 
-BATCH = 6
+BATCH = 7
 
 fp = f'./data/random_patterns/20_random_weights_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
