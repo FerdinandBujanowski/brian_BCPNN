@@ -13,10 +13,9 @@ import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.spike_utils as spils
 from tqdm import tqdm
 
-
 N_H = 9
 N_M = 9
-N_pyr = 10
+N_pyr = 5
 N_BA = 2
 N_batches = 1
 
@@ -26,7 +25,7 @@ t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 
-BATCH = 9
+BATCH = 10
 
 fp = f'./data/random_patterns/20_random_weights_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')

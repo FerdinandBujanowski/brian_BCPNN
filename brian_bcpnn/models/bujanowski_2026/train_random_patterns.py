@@ -11,13 +11,13 @@ import brian_bcpnn.utils.synapse_utils as syls
 
 N_H = 9
 N_M = 9
-N_pyr = 10
+N_pyr = 5
 N_BA = 2
 N_batches = 1
 
 N_P = 20 # amount of random patterns
 
-N_BATCH = 9
+N_BATCH = 10
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
@@ -31,8 +31,8 @@ t_stim, t_isi = [namespace[s] for s in ['t_stim', 't_isi']]
 t_init, t_end = 100*ms, 0*ms
 
 # calculating eps from total number of timesteps
-pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-# pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{N_BATCH}.txt')
+# pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{N_BATCH}.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []

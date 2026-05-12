@@ -29,9 +29,9 @@ fiebig_namespace = {
     'kappa': 1,
 
     'b_recurrence': 1,
-    'w_gain_AMPA': 0.2*0.78*3.93*nS,
-    'w_gain_NMDA': 0.2*5*0.21*nS,
-    'w_gain_GABA': 0.2*2.5*3.93*nS, # TODO increase if too much inter-MC competition?
+    'w_gain_AMPA': 2.25*0.2*0.78*3.93*nS,
+    'w_gain_NMDA': 2.25*0.2*5*0.21*nS,
+    'w_gain_GABA': 2.25*0.2*2.5*3.93*nS, # TODO increase if too much inter-MC competition?
 
     'beta_gain': pA*40,  
 
@@ -42,7 +42,7 @@ fiebig_namespace = {
 
     'tau_z': 20*ms,
     'tau_e': 100*ms,
-    'tau_p': 1*second,
+    'tau_p': 5*second,
 
     't_delay': '1.5*ms + rand()*0.2*ms',
     't_delay_basket': '3*ms + rand()*0.5*ms',
@@ -53,7 +53,7 @@ fiebig_namespace = {
     'inter_hc_coactive': 2.5,
     'inter_hc_competing': -1.5,
 
-    'p_c_intra_mc': 3*0.25,
+    'p_c_intra_mc': 4*0.25,
 
     'r_bg': 550*Hz,
     'gr_bg': 1.5*nS,
@@ -65,7 +65,7 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'G_PB_factor': 3*0.15,
+    'G_PB_factor': 6*0.15,
     'G_PB': 3.5*nS,
     'G_BP_factor': 0.8,
     'G_BP': 20*nS,
