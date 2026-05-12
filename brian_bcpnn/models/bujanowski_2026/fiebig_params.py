@@ -53,7 +53,7 @@ fiebig_namespace = {
     'inter_hc_coactive': 2.5,
     'inter_hc_competing': -1.5,
 
-    'p_c_intra_mc': 2*0.25,
+    'p_c_intra_mc': 3*0.25,
 
     'r_bg': 550*Hz,
     'gr_bg': 1.5*nS,
@@ -65,7 +65,7 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'G_PB_factor': 2*0.15,
+    'G_PB_factor': 3*0.15,
     'G_PB': 3.5*nS,
     'G_BP_factor': 0.8,
     'G_BP': 20*nS,

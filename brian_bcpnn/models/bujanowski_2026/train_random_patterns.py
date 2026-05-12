@@ -11,13 +11,13 @@ import brian_bcpnn.utils.synapse_utils as syls
 
 N_H = 9
 N_M = 9
-N_pyr = 15
+N_pyr = 10
 N_BA = 2
 N_batches = 1
 
 N_P = 20 # amount of random patterns
 
-N_BATCH = 8
+N_BATCH = 9
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
