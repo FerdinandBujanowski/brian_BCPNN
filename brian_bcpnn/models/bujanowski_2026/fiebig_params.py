@@ -51,9 +51,9 @@ fiebig_namespace = {
     'intra_hc_intra_mc': 3, # FIXED 
     # 'intra_hc_inter_mc': 0, # this one won't matter if no connection between diff MCs in same HC
     'inter_hc_coactive': 2.5,
-    'inter_hc_competing': -1.5, #-0.06,
+    'inter_hc_competing': -1.5,
 
-    'p_c_intra_mc': 0.25,
+    'p_c_intra_mc': 2*0.25,
 
     'r_bg': 550*Hz,
     'gr_bg': 1.5*nS,

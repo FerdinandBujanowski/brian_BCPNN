@@ -26,7 +26,7 @@ t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 
-BATCH = 7
+BATCH = 8
 
 fp = f'./data/random_patterns/20_random_weights_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')

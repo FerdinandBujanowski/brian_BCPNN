@@ -12,11 +12,11 @@ import brian_bcpnn.utils.spike_utils as spils
 N_H = 9
 N_M = 9
 N_pyr = 15
-N_BA = 4
+N_BA = 2
 # TODO test if N_BA=2 vs. N_BA=4 makes a difference
 N_batches = 1
 
-BATCH = 7
+BATCH = 8
 
 b_from_file = True
 # filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'

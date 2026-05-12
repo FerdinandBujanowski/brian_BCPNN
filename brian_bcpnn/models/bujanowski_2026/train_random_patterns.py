@@ -17,7 +17,7 @@ N_batches = 1
 
 N_P = 20 # amount of random patterns
 
-N_BATCH = 7
+N_BATCH = 8
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
@@ -84,10 +84,10 @@ model.save_traces(f'./data/random_patterns/20_random_weights_{N_BATCH}.data')
 # PLOTS
 
 # composite spike train
-# fig, ax = plt.subplots()
-# composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-# ax.set_xlabel('Time/s')
-# plt.show()
+fig, ax = plt.subplots()
+composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+ax.set_xlabel('Time/s')
+plt.show()
 
 # minicolumn average weight matrix
 fig, ax = plt.subplots()
