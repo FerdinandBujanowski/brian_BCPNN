@@ -58,7 +58,7 @@ def plot_spike_train_with_patterns(ax, spikemon, model, t_total, t_div, pt_dict)
                     xmin=stim_time.t_start/t_div, xmax=stim_time.t_end/t_div, 
                     color=trains.pattern_cmap((1+i)/(len(pt_dict)+1)), alpha=0.2, label=(pattern_key if j==0 else None), zorder=0
                 )
-                ax.legend()
+                # ax.legend()
     ax.set_ylabel('# PYR')
 
 def plot_ba_pyr_trains(ax0, ax1, model, basmon, spikemon, t_total, t_div=second, pt_dict=None):

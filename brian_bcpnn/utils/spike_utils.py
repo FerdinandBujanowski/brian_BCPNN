@@ -92,9 +92,9 @@ def eval_pattern_activation(model, spikemon:SpikeMonitor, pattern:Pattern, t_sto
     
     all_pattern_above = bool(np.all(np.array(pattern_freqs) >= pattern_bound/Hz))
     print(pattern_freqs, all_pattern_above)
-    # all_nonpattern_below = bool(np.all(np.array(non_pattern_freqs) < non_pattern_bound/Hz))
-    # print(non_pattern_freqs, all_nonpattern_below)
-    return all_pattern_above
+    all_nonpattern_below = bool(np.all(np.array(non_pattern_freqs) < non_pattern_bound/Hz))
+    print(non_pattern_freqs, all_nonpattern_below)
+    return all_pattern_above, all_nonpattern_below
 
 def eval_pattern_completion(model, spikemon, pattern_list:PatternList, pt_dict:dict[str,list[StimTime]], t_isi:Quantity):
     completion_list = []
@@ -103,7 +103,7 @@ def eval_pattern_completion(model, spikemon, pattern_list:PatternList, pt_dict:d
     for i, pattern in enumerate(pattern_list.patterns):
         stim_times = pt_dict[pt_dict_keys[i]]
         for stim_time in stim_times:
-            evaluation = eval_pattern_activation(model, spikemon, pattern, t_start=stim_time.t_end, t_stop=stim_time.t_end+t_isi)
-            completion_list.append((i, evaluation))
+            eval_pattern, eval_nonpattern = eval_pattern_activation(model, spikemon, pattern, t_start=stim_time.t_end+0.5*t_isi, t_stop=stim_time.t_end+t_isi)
+            completion_list.append((i, (eval_pattern, eval_nonpattern)))
     
     return completion_list

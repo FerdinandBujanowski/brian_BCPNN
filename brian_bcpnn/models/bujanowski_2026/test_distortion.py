@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 N_H = 9
 N_M = 9
-N_pyr = 5
+N_pyr = 15
 N_BA = 2
 N_batches = 1
 
@@ -25,10 +25,12 @@ t_isi = 100 * ms
 t_stim = 50 * ms
 t_end = 100 * ms
 
-BATCH = 10
+TXT_BATCH = 8
+WEIGHT_BATCH = 8
+CSV_BATCH = 11
 
-fp = f'./data/random_patterns/20_random_weights_{BATCH}.data'
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
+fp = f'./data/random_patterns/20_random_weights_{WEIGHT_BATCH}.data'
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{TXT_BATCH}.txt')
 N_patterns = len(pattern_list.patterns)
 
 t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
@@ -36,7 +38,7 @@ t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
 # calculate overlaps BEFORE DISTORTION
 pattern_overlaps = stils.get_pattern_overlap_counts(pattern_list)
 
-output_path=f'20_random_patterns/stats_{BATCH}.csv'
+output_path=f'20_random_patterns/stats_{CSV_BATCH}.csv'
 
 N_dist = 3
 
@@ -71,10 +73,11 @@ for _ in tqdm(range(N_runs)):
         model, spikemon, pattern_choice, pt_dict, t_isi
     )
 
-    for i_pattern, completion in completion_list:
+    for i_pattern, (eval_pattern, eval_nonpattern) in completion_list:
         current_data_point = {
             'N_dist': N_dist, 
-            'reconstr_success': completion,
+            'reconstr_success': eval_pattern,
+            'others_silent': eval_nonpattern,
             'original_pattern': str(pattern_choice.patterns[0]),
             'distorted_pattern': str(distorted_pattern_list.patterns[0])
         }
@@ -85,7 +88,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    # fig, ax = plt.subplots()
-    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    # ax.set_xlabel(f'Time/{second}')
-    # plt.show()
+    fig, ax = plt.subplots()
+    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    ax.set_xlabel(f'Time/{second}')
+    plt.show()
