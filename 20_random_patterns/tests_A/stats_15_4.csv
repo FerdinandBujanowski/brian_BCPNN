@@ -1,2 +1,0 @@
-N_dist,reconstr_success,others_silent,original_pattern,distorted_pattern
-3,True,True,"[[0;0], [1;5], [2;2], [3;7], [4;5], [5;2], [6;5], [7;0], [8;4]]","[[1;8], [5;3], [7;3], [0;0], [2;2], [4;5], [8;4], [6;5], [3;7]]"
