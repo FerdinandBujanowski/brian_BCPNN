@@ -393,7 +393,7 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
         self.p_c = 0 if self.N_H == 1 else self.namespace['p_c_inter_hc'] #90 / ((self.N_H-1) * self.N_pyr)
 
         if self.verbose:
-            print(f'Randomly creating intra-MC synapses with probability {round(self.namespace['p_c_intra_mc'], 2)}')
+            print(f'Randomly creating intra-MC synapses with probability {round(self.namespace["p_c_intra_mc"], 2)}')
         source_inter, target_inter = syls.get_rec_synapses(
                 self.N_H, self.N_M, self.N_pyr,
                 cp_same_mini=self.namespace['p_c_intra_mc'],
