@@ -18,7 +18,7 @@ N_batches = 1
 N_P = 20 # amount of random patterns
 
 SERIES = 'A'
-BATCH = '10_1'
+BATCH = '10_2'
 
 # UPDATE FIEBIG NAMESPACE PARAMETERS
 namespace = fiebig_namespace
@@ -27,8 +27,8 @@ namespace['b_recurrence'] = 0 # TURN OFF RECURRENCE
 
 # parameter tests
 namespace['p_c_inter_hc'] = 1.0
-namespace['p_c_intra_mc'] = 0.75
-namespace['G_PB_factor'] = 1
+namespace['p_c_intra_mc'] = 0.25
+namespace['G_PB_factor'] = 3
 namespace['gain_factor'] = 1
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=namespace, eqs=fiebig_equations)
