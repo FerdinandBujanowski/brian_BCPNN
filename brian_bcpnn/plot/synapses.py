@@ -76,7 +76,7 @@ def plot_weight_trajectory(
     ax.set_ylabel('synaptic weight')
     ax.set_xlabel(f'Time/{t_div}')
 
-def plot_weight_matrix_averages(ax, model):
+def plot_weight_matrix_averages(ax, model, return_weights=False):
     length = model.N_H * model.N_M
     weight_mat = np.zeros(shape=(model.N, model.N))
     avg_weight_mat = np.zeros(shape=(length, length))
@@ -94,4 +94,11 @@ def plot_weight_matrix_averages(ax, model):
     ax.set_ylabel('presynaptic minicolumn')
     ax.set_xlabel('postsynaptic minicolumn')    
     im = ax.imshow(avg_weight_mat, aspect='auto', interpolation='none')
+
+    if return_weights:
+        all_avg_weights = []
+        for w in avg_weight_mat.flat:
+            if w != 0.:
+                all_avg_weights.append(w)
+        return im, all_avg_weights
     return im

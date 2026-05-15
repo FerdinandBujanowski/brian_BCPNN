@@ -23,14 +23,13 @@ defaultclock.dt = 0.1*ms
 t_start = 50 * ms
 t_isi = 100 * ms
 t_stim = 50 * ms
-t_end = 100 * ms
+t_end = 0 * ms
 
-TXT_BATCH = 8
-WEIGHT_BATCH = 8
-CSV_BATCH = 12
+SERIES = 'A'
+BATCH = '15_1'
 
-fp = f'./data/random_patterns/20_random_weights_{WEIGHT_BATCH}.data'
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{TXT_BATCH}.txt')
+fp = f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data'
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
 N_patterns = len(pattern_list.patterns)
 
 t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
@@ -38,9 +37,22 @@ t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
 # calculate overlaps BEFORE DISTORTION
 pattern_overlaps = stils.get_pattern_overlap_counts(pattern_list)
 
-output_path=f'20_random_patterns/stats_{CSV_BATCH}.csv'
+output_path=f'20_random_patterns/tests_{SERIES}/stats_{BATCH}.csv'
 
 N_dist = 3
+
+# UPDATE FIEBIG NAMESPACE PARAMETERS
+namespace = fiebig_namespace
+namespace['kappa'] = 0 # turn off plasticity
+namespace['tau_p'] = t_total
+namespace['b'] = 30 * pA # make attractors last longer
+
+namespace['p_c_intra_hc'] = 0.38 # here it doesn't matter - it needs to be correctly put during training
+namespace['p_c_inter_mc'] = 0.25
+
+namespace['G_PB_factor'] = 1
+namespace['gain_factor'] = 1
+
 
 N_runs = 200 # make it 200 after testing
 for _ in tqdm(range(N_runs)):
@@ -53,14 +65,10 @@ for _ in tqdm(range(N_runs)):
     print(",".join([str(p) for p in pattern_choice.patterns]))
     print(",".join([str(p) for p in distorted_pattern_list.patterns]))
 
-    model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations, filepath=fp)
+    model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=namespace, eqs=fiebig_equations, filepath=fp)
 
     basmon = model.add_basmon()
     spikemon = model.add_spikemon()
-
-    model.namespace['kappa'] = 0
-    model.namespace['tau_p'] = t_total
-    model.namespace['b'] = 30 * pA # to make attractors last shorter
 
     stims, t_total = cue_n_epochs(
         model, t_start, t_stim, t_isi, t_end,
@@ -88,7 +96,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    # fig, ax = plt.subplots()
-    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    # ax.set_xlabel(f'Time/{second}')
-    # plt.show()
+    fig, ax = plt.subplots()
+    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    ax.set_xlabel(f'Time/{second}')
+    plt.show()

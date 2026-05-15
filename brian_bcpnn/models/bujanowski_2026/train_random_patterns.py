@@ -11,13 +11,25 @@ import brian_bcpnn.utils.synapse_utils as syls
 
 N_H = 9
 N_M = 9
-N_pyr = 5
+N_pyr = 15
 N_BA = 2
 N_batches = 1
 
 N_P = 20 # amount of random patterns
 
-N_BATCH = 10
+SERIES = 'A'
+BATCH = '15_1'
+
+# UPDATE FIEBIG NAMESPACE PARAMETERS
+namespace = fiebig_namespace
+
+namespace['b_recurrence'] = 0 # TURN OFF RECURRENCE
+
+# parameter tests
+namespace['p_c_intra_hc'] = 0.38
+namespace['p_c_inter_mc'] = 0.25
+namespace['G_PB_factor'] = 1
+namespace['gain_factor'] = 1
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
@@ -32,7 +44,7 @@ t_init, t_end = 100*ms, 0*ms
 
 # calculating eps from total number of timesteps
 # pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{N_BATCH}.txt')
+pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []
@@ -64,9 +76,6 @@ t_total = get_total_time(t_init, t_stim, t_isi, t_end, N_batches, len(pattern_li
 model.init_traces(model='zero_weight')
 model.namespace['tau_p'] = t_total
 
-# TURN OFF RECURRENCE
-model.namespace['b_recurrence'] = 0
-
 # calling train_n_epochs runs the simulation
 stims, t_total = cue_n_epochs(
     model, t_init, t_stim, t_isi, t_end,
@@ -79,7 +88,7 @@ pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 # print(pt_dict)
 
 # exit()
-model.save_traces(f'./data/random_patterns/20_random_weights_{N_BATCH}.data')
+model.save_traces(f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data')
 
 # PLOTS
 
@@ -91,7 +100,12 @@ plt.show()
 
 # minicolumn average weight matrix
 fig, ax = plt.subplots()
-im = synapses.plot_weight_matrix_averages(ax, model)
+im, weights = synapses.plot_weight_matrix_averages(ax, model, return_weights=True)
 fig.colorbar(im, ax=ax)
 plt.title('Average minicolumn weights')
+plt.show()
+
+plt.hist(weights)
+plt.xlabel('Average MC-MC weight')
+plt.ylabel('Count')
 plt.show()

@@ -29,6 +29,7 @@ fiebig_namespace = {
     'kappa': 1,
 
     'b_recurrence': 1,
+    'gain_factor': 1,
     'w_gain_AMPA': 0.2*0.78*3.93*nS,
     'w_gain_NMDA': 0.2*5*0.21*nS,
     'w_gain_GABA': 0.2*2.5*3.93*nS,
@@ -54,6 +55,7 @@ fiebig_namespace = {
     'inter_hc_competing': -1.5,
 
     'p_c_intra_mc': 0.25,
+    'p_c_inter_hc': 0.38,
 
     'r_bg': 550*Hz,
     'gr_bg': 1.5*nS,
@@ -65,10 +67,10 @@ fiebig_namespace = {
     'cp_PB': 0.7,
     'cp_BP': 0.7, 
 
-    'G_PB_factor': 0.15,
-    'G_PB': 3.5*nS,
-    'G_BP_factor': 0.8,
-    'G_BP': 20*nS,
+    'G_PB_factor': 1,
+    'G_PB': 0.15*3.5*nS,
+    'G_BP_factor': 1,
+    'G_BP': 0.8*20*nS,
 
     't_stim': 100*ms,
     't_isi': 150*ms
@@ -146,17 +148,17 @@ fiebig_equations = {
     b_glut = int(w > 0) : 1
 
     # AMPA -------------------------------------------
-    w_AMPA = b_glut * w_gain_AMPA * w : siemens
+    w_AMPA = b_glut * gain_factor * w_gain_AMPA * w : siemens
     dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
     g_AMPA_post = b_recurrence * w_AMPA * H_AMPA * x : siemens (summed)
 
     # NMDA -------------------------------------------
-    w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    w_NMDA = b_glut * gain_factor * w_gain_NMDA * w : siemens
     dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
     g_NMDA_post = b_recurrence * w_NMDA * H_NMDA * x : siemens (summed)
 
     # GABA -------------------------------------------
-    w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
+    w_GABA = (b_glut-1) * gain_factor * w_gain_GABA * w : siemens
     dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
     g_GABA_post = b_recurrence * w_GABA * H_GABA : siemens (summed)
 
@@ -231,10 +233,10 @@ fiebig_equations = {
     'inter_mc_model': '''
     # AMPA -------------------------------------------
     dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
-    g_MC_AMPA_post = w_gain_AMPA * intra_hc_intra_mc * H_AMPA : siemens (summed)
+    g_MC_AMPA_post = gain_factor * w_gain_AMPA * intra_hc_intra_mc * H_AMPA : siemens (summed)
     # NMDA -------------------------------------------
     dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
-    g_MC_NMDA_post = w_gain_NMDA * intra_hc_intra_mc * H_NMDA : siemens (summed)
+    g_MC_NMDA_post = gain_factor * w_gain_NMDA * intra_hc_intra_mc * H_NMDA : siemens (summed)
     ''',
     'inter_mc_on_pre': '''
     H_AMPA = 1
