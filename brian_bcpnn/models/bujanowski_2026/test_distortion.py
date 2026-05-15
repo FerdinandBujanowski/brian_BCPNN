@@ -48,11 +48,12 @@ namespace['tau_p'] = t_total
 namespace['b'] = 30 * pA # make attractors last longer
 
 namespace['p_c_intra_hc'] = 0.38 # here it doesn't matter - it needs to be correctly put during training
-namespace['p_c_inter_mc'] = 0.25
+namespace['p_c_inter_mc'] = 1
 
 namespace['G_PB_factor'] = 2
 namespace['gain_factor'] = 1
 
+print(namespace['p_c_inter_mc'])
 
 N_runs = 200 # make it 200 after testing
 for _ in tqdm(range(N_runs)):

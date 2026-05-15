@@ -369,7 +369,7 @@ class TwoSynTypeNetwork(ChrysanthidisNetwork):
     # TODO override synapse init function
     def __init__(
             self, N_H, N_M, N_pyr, N_BA,
-            namespace=fiebig_namespace, eqs=fiebig_equations, filepath=None
+            namespace, eqs, filepath=None
     ):
         super().__init__(
             N_H=N_H, N_M=N_M, N_pyr=N_pyr, N_BA=N_BA,
