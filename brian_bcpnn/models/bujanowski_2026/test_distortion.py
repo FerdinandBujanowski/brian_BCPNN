@@ -26,7 +26,7 @@ t_stim = 50 * ms
 t_end = 0 * ms
 
 SERIES = 'A'
-BATCH = '15_1'
+BATCH = '15_4'
 
 fp = f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
@@ -50,7 +50,7 @@ namespace['b'] = 30 * pA # make attractors last longer
 namespace['p_c_intra_hc'] = 0.38 # here it doesn't matter - it needs to be correctly put during training
 namespace['p_c_inter_mc'] = 0.25
 
-namespace['G_PB_factor'] = 1
+namespace['G_PB_factor'] = 2
 namespace['gain_factor'] = 1
 
 
@@ -96,7 +96,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    # fig, ax = plt.subplots()
-    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    # ax.set_xlabel(f'Time/{second}')
-    # plt.show()
+    fig, ax = plt.subplots()
+    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    ax.set_xlabel(f'Time/{second}')
+    plt.show()
