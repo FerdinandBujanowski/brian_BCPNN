@@ -27,7 +27,7 @@ t_end = 100 * ms
 
 TXT_BATCH = 8
 WEIGHT_BATCH = 8
-CSV_BATCH = 11
+CSV_BATCH = 12
 
 fp = f'./data/random_patterns/20_random_weights_{WEIGHT_BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{TXT_BATCH}.txt')
@@ -88,7 +88,7 @@ for _ in tqdm(range(N_runs)):
     print(f'Saved {len(entry_list)} datapoints to .csv file')
 
     # print(entry_list)
-    # fig, ax = plt.subplots()
-    # composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
-    # ax.set_xlabel(f'Time/{second}')
-    # plt.show()
+    fig, ax = plt.subplots()
+    composite.plot_ba_pyr_as_one(ax, model, basmon, spikemon, t_total=t_total, pt_dict=pt_dict, t_div=second)
+    ax.set_xlabel(f'Time/{second}')
+    plt.show()
