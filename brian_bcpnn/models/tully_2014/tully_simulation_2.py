@@ -98,7 +98,6 @@ ax3.fill_between(t_array, beta_mean-n_std*beta_std, beta_mean+n_std*beta_std, co
 #ax4.plot(t_array, w1_mean, color='c', label='mean')
 # no fill between needed?
 
-
 ax2.set_ylabel('weight_{ij}')
 ax2.set_xlabel('t/tau_p')
 ax2.grid()
