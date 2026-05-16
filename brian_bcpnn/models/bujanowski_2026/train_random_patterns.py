@@ -11,14 +11,14 @@ import brian_bcpnn.utils.synapse_utils as syls
 
 N_H = 9
 N_M = 9
-N_pyr = 30
-N_BA = 4
+N_pyr = 15
+N_BA = 2
 N_batches = 1
 
 N_P = 20 # amount of random patterns
 
 SERIES = 'B'
-BATCH = '30_1'
+BATCH = '15_1'
 
 # UPDATE FIEBIG NAMESPACE PARAMETERS
 namespace = fiebig_namespace
