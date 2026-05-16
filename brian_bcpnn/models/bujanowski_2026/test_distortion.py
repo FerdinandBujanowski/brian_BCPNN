@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 N_H = 9
 N_M = 9
-N_pyr = 10
+N_pyr = 5
 N_BA = 2
 N_batches = 1
 
