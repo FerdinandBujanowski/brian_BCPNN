@@ -15,8 +15,8 @@ from tqdm import tqdm
 
 N_H = 9
 N_M = 9
-N_pyr = 30
-N_BA = 4
+N_pyr = 5
+N_BA = 2
 N_batches = 1
 
 defaultclock.dt = 0.1*ms
@@ -26,7 +26,7 @@ t_stim = 50 * ms
 t_end = 0 * ms
 
 SERIES = 'A'
-BATCH = '30_1'
+BATCH = '5_1'
 
 fp = f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
@@ -47,10 +47,10 @@ namespace['kappa'] = 0 # turn off plasticity
 namespace['tau_p'] = t_total
 namespace['b'] = 30 * pA # make attractors last longer
 
-namespace['p_c_inter_hc'] = 0.38 # here it doesn't matter - it needs to be correctly put during training
-namespace['p_c_intra_mc'] = 0.25
+namespace['p_c_inter_hc'] = 1 # here it doesn't matter - it needs to be correctly put during training
+namespace['p_c_intra_mc'] = 1
 
-namespace['G_PB_factor'] = 1
+namespace['G_PB_factor'] = 6
 namespace['gain_factor'] = 1
 
 N_runs = 200 # make it 200 after testing
