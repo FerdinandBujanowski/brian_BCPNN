@@ -26,7 +26,7 @@ t_stim = 50 * ms
 t_end = 0 * ms
 
 SERIES = 'B'
-BATCH = '15_3'
+BATCH = '15_4'
 
 fp = f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data'
 pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
@@ -50,7 +50,7 @@ namespace['b'] = 30 * pA # make attractors last longer
 namespace['p_c_inter_hc'] = 0.75 # here it doesn't matter - it needs to be correctly put during training
 namespace['p_c_intra_mc'] = 0.5
 
-namespace['G_PB_factor'] = 1
+namespace['G_PB_factor'] = 2
 namespace['gain_factor'] = 1
 
 N_runs = 200 # make it 200 after testing
