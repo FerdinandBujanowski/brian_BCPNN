@@ -18,7 +18,7 @@ N_batches = 1
 N_P = 20 # amount of random patterns
 
 SERIES = 'B'
-BATCH = '15_2'
+BATCH = '15_3'
 
 # UPDATE FIEBIG NAMESPACE PARAMETERS
 namespace = fiebig_namespace
@@ -27,7 +27,7 @@ namespace['b_recurrence'] = 0 # TURN OFF RECURRENCE
 
 # parameter tests
 namespace['p_c_inter_hc'] = 0.75
-namespace['p_c_intra_mc'] = 0.25
+namespace['p_c_intra_mc'] = 0.5
 namespace['G_PB_factor'] = 1
 namespace['gain_factor'] = 1
 
