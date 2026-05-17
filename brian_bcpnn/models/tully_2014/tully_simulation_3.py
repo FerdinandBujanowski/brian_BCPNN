@@ -24,6 +24,7 @@ model = TullyNetwork
 tully_namespace['epsilon'] = epsilon_n
 #tully_namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M) # creating empty TimedArray to run with
 tully_namespace['tau_p'] = NEW_TAU_P 
+
 # --------------------- STDP PLOT ------------------------------
 
 

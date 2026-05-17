@@ -399,8 +399,8 @@ class TullyNetwork(CorticalNetwork): #subclass of superclass CorticalNetwork
         eps = self.namespace['epsilon']
         if self.verbose:
             print(f'Initialising model traces with eps={eps}')
-        self.REC.set_states({'Z_j': eps, 'E_j': eps, 'P_j': eps}) # adjusted initial weight by changing P_syn here!! 1.6487
-        self.S_REC.set_states({'Z_i': eps, 'E_i': eps, 'P_i': eps, 'E_syn': eps**2, 'P_syn': 2*eps**2}) #25 eps^2
+        self.REC.set_states({'Z_j': eps, 'E_j': eps, 'P_j': 2*eps}) # adjusted initial weight by changing P_syn here!! 1.6487
+        self.S_REC.set_states({'Z_i': eps, 'E_i': eps, 'P_i': 2*eps, 'E_syn': eps**2, 'P_syn': 2*eps**2}) #25 eps^2
 
                     
 class MNGNetwork(CorticalNetwork):
