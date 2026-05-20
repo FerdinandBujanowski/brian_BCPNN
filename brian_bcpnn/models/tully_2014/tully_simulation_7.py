@@ -96,7 +96,8 @@ for n_spikes in tqdm(spike_counts):
 
 
     
-max_delta_w = np.max(delta_w)
+max_delta_w = np.min(delta_w)
+
 
 fig = plt.figure()
 ax1 = fig.add_subplot(2, 1, 1)

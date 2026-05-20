@@ -11,7 +11,7 @@ import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 from activation_patterns import activation_lists
 
-NEW_TAU_P = 3*second # 3 000 ms 
+NEW_TAU_P = 1000*ms # 3 000 ms 
 dt = 0.1 * ms
 defaultclock.dt = dt
 t_total = 10*NEW_TAU_P # 10 * tau_p 
@@ -22,6 +22,7 @@ t_array = None
 w_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 #w1_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 beta_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
+beta_norm_array = np.zeros(shape=(n_iterations, int(t_total/defaultclock.dt)))
 #print(w_array.shape)
 
 
@@ -53,6 +54,7 @@ all_spike_trains = [] #TRY!
 for i in tqdm(range(n_iterations)):
     model = TullyNetwork(verbose=False)
     model.namespace['tau_p'] = NEW_TAU_P #global overwriting
+   # model.namespace['epsilon']
     S_pre, S_post = activation_lists(n_iterations)
     figure_4_stims = get_stim_list(S_pre, S_post)
     timed_array = stils.stim_times_to_timed_array(figure_4_stims, t_total, 2, 1)
@@ -63,10 +65,31 @@ for i in tqdm(range(n_iterations)):
     weightmon2 = model.add_synmon(variables=['w'], record=True) #change to =1 if only want postsynaptic
     # model.add_monitor / statemon ?
     spikemon = model.add_spikemon()
-    biasmon = StateMonitor(source=model.REC, variables = ['beta'], record=1) #record = 1 does so only the 2nd (=postsynaptic) neuron is registered?
+    biasmon = StateMonitor(source=model.REC, variables = ['beta'], record=1) #record = 1 because we only want the 2nd (=postsynaptic) neuron registered
+    
+    pjmon = StateMonitor(source=model.REC, variables='P_j', record=True) # debugging
+    #pimon = StateMonitor(source=model.REC, variables='P_i', record=True) # debuggin
+    model.add_monitor(pjmon, pjmon.name) #deb
+    #model.add_monitor(pimon, pimon.name)
+    #zjmon = StateMonitor(source=model.REC, variables='Z_j')
+
     # TODO add statemon for bias
     model.add_monitor(biasmon, biasmon.name) #model.add_statemon(variables, record) in Ferdinand's pre-built function 
+    
+    @network_operation(dt=defaultclock.dt)
+    def clip_probabilities():
+        model.REC.P_j = np.clip(model.REC.P_j, 0.0033, 0.8)
+    #    model.REC.P_i = np.clip(model.REC.P_i, 0.0033, 1.0)
+    model.network.add(clip_probabilities)
     model.run(t_total)
+
+        # compute normalized beta for this iteration
+   # P_j_0 = pjmon.P_j[0]
+   # P_j_1 = pjmon.P_j[1]
+   # P_sum = P_j_0 + P_j_1
+   # beta_norm_array[i, :] = np.log(P_j_1 / P_sum)  # postsynaptic = neuron 1
+
+
 
     w_array[i,:] = weightmon.w[0]
     all_spike_trains.append(spikemon.spike_trains()) #TRY!
@@ -82,24 +105,39 @@ w_mean = np.mean(w_array, axis=0)
 w_std = np.std(w_array, axis=0)
 n_std = 1.96
 
+beta_norm_mean = np.mean(beta_norm_array, axis=0)
+beta_norm_std = np.std(beta_norm_array, axis=0)
+
 #w1_mean = np.mean(w1_array, axis=0)
 
 beta_mean = np.mean(beta_array, axis=0)
 beta_std = np.std(beta_array, axis=0)
 
 # ax1 is spikemonitor 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, sharex=True)
 trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
 
 ax2.plot(t_array, w_mean, color='c', label='mean')
 ax2.fill_between(t_array, w_mean-n_std*w_std, w_mean+n_std*w_std, color='c', alpha=0.3, label='95%')
 
+# FOR NOW
 ax3.plot(t_array, beta_mean, color='m', label='mean')
 ax3.fill_between(t_array, beta_mean-n_std*beta_std, beta_mean+n_std*beta_std, color='m', alpha=0.3, label='95')
 
-# do for ax4 delta weight change. so w_2 - w_1 . How to plot delta weight change?
-#ax4.plot(t_array, w1_mean, color='c', label='mean')
-# no fill between needed?
+# TRYING
+
+#x3.plot(t_array, beta_norm_mean, color='magenta', label='mean')
+#ax3.fill_between(t_array, 
+##                 beta_norm_mean - n_std*beta_norm_std, 
+#                 beta_norm_mean + n_std*beta_norm_std, 
+#                 color='magenta', alpha=0.3, label='95%')
+#ax3.axhline(y=0, color='grey', linewidth=1, linestyle='--')
+#ax3.set_ylabel('β (normalized)')
+#ax3.set_xlabel('t/tau_p')
+#ax3.legend()
+
+
+# ----
 
 ax2.set_ylabel('weight_{ij}')
 ax2.set_xlabel('t/tau_p')
@@ -111,17 +149,19 @@ ax3.set_xlabel('t/tau_p')
 ax3.grid()
 ax3.legend()
 
-#ax4.set_ylabel('weight')
-#ax3.set_xlabel('time t')
-#ax3.grid()
-#ax3.legend()
+ax4.plot(pjmon.t, pjmon.P_j[0], label='P_j neuron 0')
+ax4.plot(pjmon.t, pjmon.P_j[1], label='P_j neuron 1')
+ax4.axhline(y=1, color='red', linestyle='--', linewidth=1, label='P_j = 1 (bias = 0)')
+ax4.set_ylabel('P_j')
+ax4.legend()
 
 plt.show() #creates new plot window
 # I can now use ax1, etc for new plots after plt.show()
 
 
 
-
+#print('Z_j max:', statemon.Z_j[0].max())  # add a statemon for Z_j
+#print('P_j max:', statemon.P_j[0].max())
 
 #-TODO
 # plot these together - see if as in STDP

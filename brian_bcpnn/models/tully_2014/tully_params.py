@@ -17,15 +17,16 @@ tully_namespace = {
 
     # CHANNEL MODEL
    # 'tau_z': 5 * ms, # Z trace time constant, 10 normally
-    'tau_z_i': 5*ms,
-    'tau_z_j': 2*ms,
+    'tau_z_i': 10 * ms, # 10 ms or 5 ms
+    'tau_z_j': 10* ms,
     # 'tau_z': 10 * ms # normally in the model 
     'tau_e': 100 * ms, # E trace time constant
-    'tau_p': 10000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
+    'tau_p': 1000 * ms,#10000 * ms, # P trace time constant, before 3 000ms. Should be 1000 in Sim2
     'f_max': 30 * Hz, # highest firing rate
     'f_min': 1 * Hz, # min firing rate
     #'epsilon': 0.0001, # min bcpnn probability
-    'epsilon': 0.01, # 1/(30*Hz * 3000*ms). Before: 0.0001, # min bcpnn probability
+    #'epsilon': 0.01, # 1/(30*Hz * 3000*ms). Before: 0.0001, # min bcpnn probability
+    'epsilon': 0.0033, # as per Anders instructions
     't_spike': 0.1 * ms, # spike duration
 
     # SYNAPSE MODEL
@@ -64,7 +65,6 @@ tully_equations = {
     dg_stim/dt = -g_stim/tau_input : siemens
     dg_alpha/dt = (g_stim-g_alpha)/tau_input : siemens
     I_stim = b_on * g_stim * (V_m-E_ex) : amp
-
     # total voltage
     g_ex : siemens # summed over all excitatory synapses
     g_inh : siemens # summed over all inhibitory synapses

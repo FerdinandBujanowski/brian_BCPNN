@@ -18,6 +18,8 @@ defaultclock.dt = namespace['sim_dt'] #using namespace but specifically the valu
 t_stim = 100 * ms #using "blocks" of 100ms for simulation.
 t_total = 500 * ms #total simulation time.
 
+# -------------- SPIKE TRACES -----------------
+
 # STIMULI
 # ColumnCoords, StimProtocol, StimTime all taken from stim_utils file.
 neuron_1_coords = ColumnCoords(0, 0) # first neuron, pre-synaptic.
