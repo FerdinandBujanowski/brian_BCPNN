@@ -114,8 +114,9 @@ beta_mean = np.mean(beta_array, axis=0)
 beta_std = np.std(beta_array, axis=0)
 
 # ax1 is spikemonitor 
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, sharex=True)
-trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P)
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+trains.compare_two_trains(ax1, spikemon, 0, 1, t_div=NEW_TAU_P, c_a='red', c_b='blue')
+#def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t_div=ms):
 
 ax2.plot(t_array, w_mean, color='c', label='mean')
 ax2.fill_between(t_array, w_mean-n_std*w_std, w_mean+n_std*w_std, color='c', alpha=0.3, label='95%')
@@ -149,11 +150,13 @@ ax3.set_xlabel('t/tau_p')
 ax3.grid()
 ax3.legend()
 
+'''
 ax4.plot(pjmon.t, pjmon.P_j[0], label='P_j neuron 0')
 ax4.plot(pjmon.t, pjmon.P_j[1], label='P_j neuron 1')
 ax4.axhline(y=1, color='red', linestyle='--', linewidth=1, label='P_j = 1 (bias = 0)')
 ax4.set_ylabel('P_j')
 ax4.legend()
+'''
 
 plt.show() #creates new plot window
 # I can now use ax1, etc for new plots after plt.show()

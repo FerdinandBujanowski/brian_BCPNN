@@ -17,7 +17,7 @@ from brian_bcpnn.models.tully_2014.tully_params import tully_equations, tully_na
 NEW_TAU_P = 1000*ms
 dt = 0.01 * ms
 defaultclock.dt = dt
-epsilon_n = 0.0033 # epsilon = f_min/f_max, a baseline firing rate, Anders said  0.0033
+epsilon_n = 0.002 # 0.0033 # epsilon = f_min/f_max, a baseline firing rate, Anders said  0.0033
 # before epsilon = 1 /(f_max * tau_p) = 0.0033
 model_run_length = 500
 # 1 /(f_max * tau_p) = 1/(30 * 1 000)
@@ -26,7 +26,6 @@ model_run_length = 500
 # --------- SINGLE SPIKE PAIRS ------------
 
 #i = 10*ms # spike timing interval
-i = 5*ms
 
 '''
 start_scope()
@@ -95,7 +94,10 @@ P_syn_values = [15*epsilon_n**2, 20*epsilon_n**2, 30*epsilon_n**2, 50*epsilon_n*
 weight_traces = {}  # stores {P_syn: (t, w)} per run
 bias_traces = {}
 
-for P_syn in P_syn_values:
+#i = 5*ms
+i = 5*ms
+
+for P_syn in tqdm(P_syn_values):
 
     start_scope() 
     time_after=100*ms
@@ -104,9 +106,10 @@ for P_syn in P_syn_values:
    # tully_namespace['epsilon'] = epsilon_n
     tully_namespace['tau_p'] = NEW_TAU_P
     tully_namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M)
-
-   
+    tully_namespace['f_max'] = 50 * Hz # trying 
+   # tully_namespace['f_min'] = 49 * Hz
     eps = epsilon_n
+    model.S_REC.Z_i = 1.0 + eps # full firing, trying 
     model.REC.set_states({
         'Z_j': eps, 'E_j': eps, 'P_j': 2*eps
     })
@@ -133,8 +136,10 @@ for P_syn in P_syn_values:
         model.run(abs(i))
         model.REC.V_m[0] = 0*mV
         model.run(abs(i))
-        model.REC.V_m[0] = 0*mV
-        model.run(abs(i))
+     #   model.run(abs(i))
+     #   model.run(abs(i))
+       # model.REC.V_m[1] = 0*mV # THREE PRE FOLLOWED BY ONE POST !
+       # model.run(abs(i))
     #    model.REC.V_m[0] = 0*mV
     #    model.run(abs(i))
     #    model.REC.V_m[0] = 0*mV
