@@ -22,7 +22,7 @@ epsilon_n = 0.0033 # epsilon = f_min/f_max, a baseline firing rate
 model_run_length = 500
 
 #i = 10*ms # spike timing interval
-i = 5*ms
+i = 10*ms
 
 # ----- SCATTER PLOT OF INTIAL WEIGHT VS WEIGHT AFTER 100 MS:--------
 # ----- SINGLE SCATTER PLOT!!
@@ -35,8 +35,7 @@ P_syn_values = [1.1*epsilon_n**2, 1.5*epsilon_n**2, 2*epsilon_n**2, 3*epsilon_n*
 weight_traces = {}  # stores {P_syn: (t, w)} per run
 #bias_traces = {}
 
-
-for P_syn in P_syn_values:
+for P_syn in tqdm(P_syn_values):
 
     start_scope() 
     time_after=100*ms
@@ -59,12 +58,10 @@ for P_syn in P_syn_values:
 
     weightmon = model.add_synmon(variables=['w'], record=True)
     spikemon = model.add_spikemon()
-        #biasmon = StateMonitor(model.REC, 'beta', record=True)
     biasmon = StateMonitor(source=model.REC, variables='beta', record=True)
     model.add_monitor(biasmon, biasmon.name)
 
-        # 
-    model.run(5*ms)
+    model.run(10*ms)
         
     if i > 0:
             model.REC.V_m[0] = 0*mV
@@ -77,10 +74,10 @@ for P_syn in P_syn_values:
             model.run(abs(i))
             model.REC.V_m[0] = 0*mV
             model.run(abs(i))
-            model.REC.V_m[0] = 0*mV
-            model.run(abs(i))
-            model.REC.V_m[0] = 0*mV
-            model.run(abs(i))
+        #    model.REC.V_m[0] = 0*mV
+        #    model.run(abs(i))
+        #    model.REC.V_m[0] = 0*mV
+        #    model.run(abs(i))
         #   model.REC.V_m[0] = 0*mV
         #    model.run(abs(i))
     else:
@@ -89,7 +86,8 @@ for P_syn in P_syn_values:
             model.REC.V_m[0] = 0*mV
         
 
-    time_after_run = (100*ms) - (5*ms + abs(i))
+    #time_after_run = (200*ms) - (10*ms + abs(i))
+    time_after_run = 200*ms 
     model.run(time_after_run)
     model.run(model_run_length * ms)
     # -----------------------------------------

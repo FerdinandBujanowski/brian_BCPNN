@@ -17,7 +17,7 @@ from brian_bcpnn.models.tully_2014.tully_params import tully_equations, tully_na
 NEW_TAU_P = 1000*ms
 dt = 0.01 * ms
 defaultclock.dt = dt
-epsilon_n = 0.002 # 0.0033 # epsilon = f_min/f_max, a baseline firing rate, Anders said  0.0033
+epsilon_n = 0.0033 # epsilon = f_min/f_max, a baseline firing rate, Anders said  0.0033
 # before epsilon = 1 /(f_max * tau_p) = 0.0033
 model_run_length = 500
 # 1 /(f_max * tau_p) = 1/(30 * 1 000)

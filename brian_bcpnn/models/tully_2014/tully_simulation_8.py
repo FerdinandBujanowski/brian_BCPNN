@@ -24,14 +24,14 @@ model_run_length = 500
 #i = 10*ms # spike timing interval
 i = 5*ms
 
-# ----- SCATTER PLOT OF INTIAL WEIGHT VS WEIGHT AFTER 100 MS / DELTA WEIGHT (NORMALIZED):--------
+# ----- SCATTER PLOT OF NBR OF SPIKES VS WEIGHT AFTER 100 MS:--------
 # ------- MULTIPLE SCATTER PLOTS!!
 
 start_scope()
 
 #P_syn_values = [30*epsilon_n**2, 40*epsilon_n**2, 50*epsilon_n**2, 60*epsilon_n**2, 70*epsilon_n**2]  
 #P_syn_values = [15*epsilon_n**2, 20*epsilon_n**2, 25*epsilon_n**2, 30*epsilon_n**2, 35*epsilon_n**2, 40*epsilon_n**2]
-P_syn_values = [1.005*epsilon_n**2, 1.1*epsilon_n**2, 1.35*epsilon_n**2, 1.5*epsilon_n**2, 1.8*epsilon_n**2,2*epsilon_n**2, 2.5*epsilon_n**2, 3*epsilon_n**2, 3.5*epsilon_n**2, 4*epsilon_n**2, 4.5*epsilon_n**2, 5*epsilon_n**2, 5.5*epsilon_n**2, 6*epsilon_n**2, 6.5*epsilon_n**2, 7*epsilon_n**2, 7.5*epsilon_n**2] #, 8*epsilon_n**2, 8.5*epsilon_n**2]
+#P_syn_values = [1.005*epsilon_n**2, 1.1*epsilon_n**2, 1.35*epsilon_n**2, 1.5*epsilon_n**2, 1.8*epsilon_n**2,2*epsilon_n**2, 2.5*epsilon_n**2, 3*epsilon_n**2, 3.5*epsilon_n**2, 4*epsilon_n**2, 4.5*epsilon_n**2, 5*epsilon_n**2, 5.5*epsilon_n**2, 6*epsilon_n**2, 6.5*epsilon_n**2, 7*epsilon_n**2, 7.5*epsilon_n**2] #, 8*epsilon_n**2, 8.5*epsilon_n**2]
 #weight_traces = {}  # stores {P_syn: (t, w)} per run
 #bias_traces = {}
 
@@ -40,10 +40,7 @@ all_results = {} # {n_spikes: (w_starts, w_ends)}
 
 for n_spikes in tqdm(spike_counts):
     weight_traces = {}  #resets for each run
-
-    for P_syn in P_syn_values:
-
-        start_scope() 
+    start_scope() 
         time_after=100*ms
         tully_namespace['epsilon'] = epsilon_n
         tully_namespace['K'] = 1 # decrease to decrease plasticity
@@ -51,17 +48,6 @@ for n_spikes in tqdm(spike_counts):
     # tully_namespace['epsilon'] = epsilon_n
         tully_namespace['tau_p'] = NEW_TAU_P
         tully_namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M)
-
-    
-        eps = epsilon_n
-        model.S_REC.set_states({
-            'Z_i': eps, 'E_i': eps, 'P_i': eps,
-            'E_syn': eps**2, 'P_syn': P_syn  
-        })
-
-        model.REC.set_states({
-            'Z_j': eps, 'E_j': eps, 'P_j': eps
-        })
 
         weightmon = model.add_synmon(variables=['w'], record=True)
         spikemon = model.add_spikemon()
@@ -84,7 +70,7 @@ for n_spikes in tqdm(spike_counts):
         w_after_100 = weightmon.w[0][np.searchsorted(weightmon.t, 100*ms)] 
         idx = np.searchsorted(weightmon.t, 100*ms)
         print(f'Index: {idx}, time at index: {weightmon.t[idx]/ms} ms, total length: {len(weightmon.t)}')
-        w_0 = float(np.log(P_syn) - np.log((eps*eps)))  # OBS CHANGE PI PJ MANUALLY 
+     #   w_0 = float(np.log(P_syn) - np.log((eps*eps)))  # OBS CHANGE PI PJ MANUALLY 
         weight_traces[P_syn] = (w_0, w_before, w_after_100)
 
     w_starts = [v[1] for v in weight_traces.values()] # initial weight
@@ -131,4 +117,3 @@ ax2.grid(True, linestyle='--', alpha=0.5)
 
 plt.tight_layout()
 plt.show()
-
