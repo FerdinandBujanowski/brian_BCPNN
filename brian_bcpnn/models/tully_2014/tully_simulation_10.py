@@ -118,21 +118,16 @@ for n_spikes, (w_starts, w_ends, delta_w) in all_results.items():
 
 
 
-
-# diagonal reference line across all data
-all_w = [w for w_starts, _, _ in all_results.values() for w in w_starts]
-ax1.plot([min(all_w), max(all_w)], [min(all_w), max(all_w)], 
-         'k--', linewidth=1, label='y = x (no change)')
-ax1.axhline(y=0, color='grey', linewidth=1.5, linestyle='--')
 ax1.set_xlabel('Spiking frequency (Hz)')
 ax1.set_ylabel('w after 100 ms')
 ax1.legend(fontsize=10)
 ax1.grid(True, linestyle='--', alpha=0.5)
 
+font1 = {'family':'sans-serif','size':10}
+font2 = {'family':'sans-serif','size':15}
 
-ax2.axhline(y=0, color='grey', linewidth=1.5, linestyle='--')
-ax2.set_xlabel('Spiking frequency (Hz)')
-ax2.set_ylabel('Δw/max(Δw)')
+ax2.set_xlabel('Spiking frequency (Hz)', fontdict=font1)
+ax2.set_ylabel(r'$\frac{\Delta w}{max(\Delta w)}$', fontdict=font2)
 ax2.legend(fontsize=10)
 ax2.grid(True, linestyle='--', alpha=0.5)
 

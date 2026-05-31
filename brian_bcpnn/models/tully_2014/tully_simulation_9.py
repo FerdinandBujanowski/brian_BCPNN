@@ -32,7 +32,10 @@ start_scope()
 #P_syn_values = [15*epsilon_n**2, 20*epsilon_n**2, 25*epsilon_n**2, 30*epsilon_n**2, 35*epsilon_n**2, 40*epsilon_n**2]
 #P_syn_values = [1.005*epsilon_n**2, 1.1*epsilon_n**2, 1.35*epsilon_n**2, 1.5*epsilon_n**2, 1.8*epsilon_n**2,2*epsilon_n**2, 2.5*epsilon_n**2, 3*epsilon_n**2, 3.5*epsilon_n**2, 4*epsilon_n**2, 4.5*epsilon_n**2, 5*epsilon_n**2, 5.5*epsilon_n**2, 6*epsilon_n**2, 6.5*epsilon_n**2, 7*epsilon_n**2, 7.5*epsilon_n**2] #, 8*epsilon_n**2, 8.5*epsilon_n**2]
 #P_syn_values = [1.005*epsilon_n**2, 1.1*epsilon_n**2, 1.2*epsilon_n**2, 1.25*epsilon_n**2, 1.30*epsilon_n**2, 1.35*epsilon_n**2, 1.5*epsilon_n**2, 1.8*epsilon_n**2, 2*epsilon_n**2, 2.2*epsilon_n**2, 2.5*epsilon_n**2, 3*epsilon_n**2]
+
+#P_syn_values = [1.005*epsilon_n**2] #, 1.1*epsilon_n**2, 1.2*epsilon_n**2, 1.25*epsilon_n**2]
 P_syn_values = [1.005*epsilon_n**2, 1.1*epsilon_n**2, 1.2*epsilon_n**2, 1.25*epsilon_n**2]
+#P_syn_values = [2.71828*epsilon_n**2, 2.71829*epsilon_n**2, 2.91830*epsilon_n**2, 2.61831*epsilon_n**2]
 #weight_traces = {}  # stores {P_syn: (t, w)} per run
 #bias_traces = {}
 #P_syn_values = [epsilon_n**2, epsilon_n**2, epsilon_n**2, epsilon_n**2, epsilon_n**2  ]#trying all same initialized weight
@@ -118,10 +121,12 @@ for j, (w_starts, w_ends, delta_w) in all_results.items():
 
 
 font1 = {'family':'sans-serif','size':15}
+font2 = {'family':'sans-serif','size':22}
 
-plt.axhline(y=0, color='grey', linewidth=1.5, linestyle='--')
+#plt.axhline(y=0, color='grey', linewidth=1.5, linestyle='--')
 plt.xlabel('Spiking frequency (Hz)', fontdict=font1)
-plt.ylabel('Δw/max(Δw)', fontdict=font1)
+#plt.ylabel('Δw/max(Δw)', fontdict=font1)
+plt.ylabel(r'$\frac{\Delta w}{max(\Delta w)}$', fontdict=font2)
 plt.legend(fontsize=10)
 plt.grid(True, linestyle='--', alpha=0.5)
 

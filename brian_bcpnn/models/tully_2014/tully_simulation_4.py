@@ -26,6 +26,68 @@ model_run_length = 500
 # --------- SINGLE SPIKE PAIRS ------------
 
 #i = 10*ms # spike timing interval
+
+'''
+start_scope()
+tully_namespace['epsilon'] = epsilon_n
+time_after=100*ms
+model = TullyNetwork()
+tully_namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M)
+tully_namespace['tau_p'] = NEW_TAU_P # add in loop also
+#tully_namespace['epsilon'] = epsilon_n
+# model.namespace['tau_e'] = new_tau_e
+weightmon = model.add_synmon(variables=['w'], record=True)
+spikemon = model.add_spikemon()
+#basmon = model.add_basmon()
+biasmon = StateMonitor(source=model.REC, variables='beta', record=True)
+model.add_monitor(biasmon, biasmon.name)
+# TODO add statemon for bias
+# w_before = model.S_REC.w[0]
+model.run(5*ms)
+w_before = model.S_REC.w[0] # S_REC is the synapse between i and j, so this is the synaptic strength aka the weight. Weight of the first synapse. 
+t_total = 10*NEW_TAU_P
+
+if i > 0:
+    model.REC.V_m[0] = 0*mV # spike presyn
+    model.run(abs(i))            # time between 
+  #  model.REC.V_m[1] = 0*mV # spike postsyn
+    model.REC.V_m[0] = 0*mV
+    model.run(abs(i))
+  #  model.REC.V_m[0] = 0*mV
+    model.run(abs(i))
+   # model.REC.V_m[0] = 0*mV
+    model.run(abs(i))
+   # model.REC.V_m[0] = 0*mV
+    model.run(abs(i))
+    #model.REC.V_m[0] = 0*mV
+    #model.run(abs(i))
+    model.run(30*ms)
+    model.REC.V_m[1] = 0*mV
+    #model.REC.V_m[0] = 0*mV
+    #model.run(abs(i))
+    #model.REC.V_m[0] = 0*mV''
+else:
+    model.REC.V_m[1] =0*mV  # spike presyn
+    model.run(abs(i))       # time between 
+    model.REC.V_m[0] = 0*mV # spike postsyn
+
+
+time_after = time_after - (5*ms + abs(i))
+model.run(time_after)
+w_after = model.S_REC.w[0] # index at timestep of 100 ms 
+
+model.run(model_run_length*ms)
+
+print('spiking intervall', i, 'ms')
+print('weight after 5 ms:', w_before)
+print('weight after 100ms: ', w_after)
+print('delta weight: ', (w_after - w_before))
+model_run_length = model_run_length + 100 + 5 
+'''
+
+# --------- SINGLE SPIKE PAIRS ------------
+
+#i = 10*ms # spike timing interval
 i = 5*ms
 
 

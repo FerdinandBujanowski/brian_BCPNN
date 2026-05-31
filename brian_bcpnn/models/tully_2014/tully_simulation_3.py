@@ -112,8 +112,8 @@ for i in tqdm(interval_list): # tqdm : loading bar #in [40]
     model = TullyNetwork()                                          # changed from NEW_TAU_P to time_total
     model.namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M) # creating empty TimedArray to run with
     model.namespace['tau_p'] = NEW_TAU_P
-    model.namespace['tau_z_i'] = 2*ms
-    model.namespace['tau_z_j'] = 5*ms
+    model.namespace['tau_z_i'] = 5*ms
+    model.namespace['tau_z_j'] = 2*ms
 #   model.namespace['epsilon'] = epsilon_n # adjusted to tau_p
     weightmon = model.add_synmon(variables=['w'], record=True)
     model.run(5*ms)
@@ -157,6 +157,7 @@ plt.plot(interval_list, axis_delta_w2, 'o-', color='blue')
 
 delta_w_list3 = []
 
+'''
 for i in tqdm(interval_list): # tqdm : loading bar #in [40]
     start_scope()
     
@@ -205,6 +206,7 @@ max_delta3 = np.max(delta_w_list3)
 axis_delta_w3 = delta_w_list3 / max_delta3
 
 plt.plot(interval_list, axis_delta_w3, 'o-', color='green')
+'''
 
 
 #plt.plot(interval_list, axis_delta_w, 'o-', color='steelblue')
@@ -221,11 +223,9 @@ plt.axhline(y=0, color='black', linewidth=1, linestyle='--')
 plt.axvline(x=0, color='black', linewidth=1, linestyle='--')
 ax = plt.gca()  # get current axes
 
+
 plt.legend()
-
-
 plt.show()
-
 
 
 
