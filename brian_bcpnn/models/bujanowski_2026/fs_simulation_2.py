@@ -2,6 +2,9 @@
 # and train orthogonal patterns for several batches - save final parameters to file 
 
 from brian2 import *
+import pandas as pd
+import numpy as np
+
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
 from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_namespace, fiebig_equations
@@ -10,10 +13,10 @@ from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_ti
 import brian_bcpnn.utils.stim_utils as stils
 import brian_bcpnn.utils.synapse_utils as syls
 
-N_H = 6
-N_M = 6
+N_H = 9
+N_M = 9
 N_pyr = 30
-N_BA = 2
+N_BA = 4
 N_batches = 1
 
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
@@ -95,7 +98,31 @@ stims, t_total = cue_n_epochs(
 
 pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 
+# DATA_PATH = './data/orthogonal/all_monitors/'
 model.save_traces(f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data')
+
+# SAVE ALL MONITORS
+# spikemon
+# spikemon_data = spikemon.get_states(['t', 'i'], units=False, format='pandas')
+# spikemon_data.to_csv(f'{DATA_PATH}spikemon.csv', index=False)
+
+# # basmon
+# basmon_data = basmon.get_states(['t', 'i'], units=False, format='pandas')
+# basmon_data.to_csv(f'{DATA_PATH}basmon.csv', index=False)
+
+# synmon_mc_1
+# np.savetxt(f'{DATA_PATH}synmon_mc_1.txt', synmon_mc_1.w)
+
+# # synmon_mc_2
+# np.savetxt(f'{DATA_PATH}synmon_mc_2.txt', synmon_mc_2.w)
+
+# # tracemon
+# np.savetxt(f'{DATA_PATH}tracemon.txt', tracemon.get_states(model.REC_TRACES, units=False))
+
+# # syn_tracemon_s1
+# np.savetxt(f'{DATA_PATH}syn_tracemon_s1.txt', syn_tracemon_s1.get_states(model.S_REC_TRACES+['w'], units=False))
+# # syn_tracemon_s2
+# np.savetxt(f'{DATA_PATH}syn_tracemon_s2.txt', syn_tracemon_s2.get_states(model.S_REC_TRACES+['w'], units=False))
 
 # PLOTS
 
@@ -109,6 +136,17 @@ model.save_traces(f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data')
 #     ax.set_ylabel('Spiking Frequency')
 #     ax.set_title(f'Pattern {n_pattern+1}')
 # plt.show()
+
+fig, [ax1, ax2] = plt.subplots(1, 2, gridspec_kw={'width_ratios': (3, 1)})
+composite.plot_ba_pyr_as_one(ax1, model, basmon, spikemon, t_total, t_div=second, pt_dict=pt_dict)
+im = synapses.plot_weight_matrix_averages(ax2, model)
+fig.colorbar(im, ax=ax2)
+plt.show()
+
+fig, [ax1, ax2] = plt.subplots(1, 2)
+composite.plot_ba_pyr_as_one(ax1, model, basmon, spikemon, t_total, t_div=second, pt_dict=pt_dict)
+composite.plot_ba_pyr_as_one(ax2, model, basmon, spikemon, t_total, t_div=second, pt_dict=pt_dict)
+plt.show()
 
 composite.plot_training_protocol(
     model, basmon, spikemon,

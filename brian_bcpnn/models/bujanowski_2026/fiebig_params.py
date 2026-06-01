@@ -30,9 +30,9 @@ fiebig_namespace = {
 
     'b_recurrence': 1,
     'gain_factor': 1,
-    'w_gain_AMPA': 0.2*0.78*3.93*nS,
-    'w_gain_NMDA': 0.2*5*0.21*nS,
-    'w_gain_GABA': 0.2*2.5*3.93*nS,
+    'w_gain_AMPA': 0.05*0.78*3.93*nS, # 0.2
+    'w_gain_NMDA': 0.05*5*0.21*nS, # 0.2
+    'w_gain_GABA': 0.05*2.5*3.93*nS, # 0.2*2.5
 
     'beta_gain': pA*40,  
 
@@ -46,7 +46,7 @@ fiebig_namespace = {
     'tau_p': 5*second,
 
     't_delay': '1.5*ms + rand()*0.2*ms',
-    't_delay_basket': '3*ms + rand()*0.5*ms',
+    # 't_delay_basket': '3*ms + rand()*0.5*ms',
     't_delay_long': '15*ms+rand()*10*ms',
 
     'intra_hc_intra_mc': 3, # FIXED 
@@ -68,7 +68,7 @@ fiebig_namespace = {
     'cp_BP': 0.7, 
 
     'G_PB_factor': 1,
-    'G_PB': 0.15*3.5*nS,
+    'G_PB': 0.15*3.5*nS, # 0.15
     'G_BP_factor': 1,
     'G_BP': 0.8*20*nS,
 

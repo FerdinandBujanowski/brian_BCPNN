@@ -18,6 +18,7 @@ N_BA = 4
 
 modded_namespace = fiebig_namespace
 modded_namespace['r_bg'] = 0*Hz
+modded_namespace['beta_gain'] = 0 * nA
 model = TwoSynTypeNetwork(N_H, N_M, N_pyr=N_pyr, N_BA=N_BA, namespace=fiebig_namespace, eqs=fiebig_equations)
 
 model.namespace['K_AMPA'] = 0
@@ -62,6 +63,6 @@ ax2.plot(volmon.t/ms, volmon[0].V_m/mV, label='neuron 0')
 ax2.plot(volmon.t/ms, volmon[j_list[1]].V_m/mV, label='connected neuron')
 ax2.set_ylabel('Voltage (mV)')
 ax2.set_xlabel('Time/ms')
-ax2.legend()
+# ax2.legend()
 ax2.grid()
 plt.show()

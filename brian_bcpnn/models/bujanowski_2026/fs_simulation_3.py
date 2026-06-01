@@ -11,16 +11,16 @@ import brian_bcpnn.utils.spike_utils as spils
 
 N_H = 9
 N_M = 9
-N_pyr = 15
-N_BA = 2
+N_pyr = 30
+N_BA = 4
 # TODO test if N_BA=2 vs. N_BA=4 makes a difference
 N_batches = 1
 
 BATCH = 8
 
 b_from_file = True
-# filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'
-filepath = f'./data/random_patterns/20_random_weights_{BATCH}.data'
+filepath = f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data'
+# filepath = f'./data/random_patterns/weights_series_A_30_1.data'
 
 model = None
 if b_from_file:
@@ -40,16 +40,17 @@ t_stim = 50 * ms
 t_end = 100 * ms
 N_batches = 1
 
-# pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/patterns_{BATCH}.txt')
-pattern_list = stils.PatternList(pattern_list.patterns[0:2])
-# pattern_list = stils.get_incomplete_patterns(pattern_list, 1)
+pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
+# pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_A/patterns_A.txt')
+pattern_list = stils.PatternList(pattern_list.patterns[0:1])
+# pattern_list = stils.get_incomplete_patterns(pattern_list, 6)
+# pattern_list = stils.distort_patterns(pattern_list, model.N_M, 3)
 
 # get pattern "overlap score" histogram
 
 t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, len(pattern_list.patterns))
 model.namespace['tau_p'] = t_total
-model.namespace['b'] = 30 * pA # to make attractors last shorter
+model.namespace['b'] = 30 * pA # to make attractors last longer
 model.namespace['kappa'] = 0
 
 if not b_from_file:
