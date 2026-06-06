@@ -47,12 +47,12 @@ for P_syn in tqdm(P_syn_values):
     tully_namespace['tau_p'] = NEW_TAU_P
     tully_namespace['stim_ta'] = stils.stim_times_to_timed_array([], time_after, model.N_H, model.N_M)
     tully_namespace['K'] = 0.065    # 0.035
-   # tully_namespace['f_max'] = 50 * Hz # trying 
+    tully_namespace['f_max'] = 50 * Hz # trying 
    # tully_namespace['f_min'] = 49 * Hz
 
 
     eps = epsilon_n
-    model.S_REC.Z_i = 1.0 + eps # full firing, trying 
+  #  model.S_REC.Z_i = 1.0 + eps # full firing, trying 
     model.REC.set_states({
         'Z_j': eps, 'E_j': eps, 'P_j': eps
     })
@@ -82,10 +82,17 @@ for P_syn in tqdm(P_syn_values):
         model.run(abs(i))
         model.REC.V_m[0] = 0*mV
         model.run(abs(i))
-        model.REC.V_m[0] = 0*mV
-        model.run(abs(i))
-        model.REC.V_m[0] = 0*mV
-        model.run(abs(i))
+    #    model.REC.V_m[0] = 0*mV
+   #     model.run(abs(i))
+    #    model.REC.V_m[0] = 0*mV
+    #    model.run(abs(i))
+    #    model.REC.V_m[0] = 0*mV
+    #    model.run(abs(i))
+    #    model.REC.V_m[0] = 0*mV
+    #    model.run(abs(i))
+
+
+
        # model.REC.V_m[1] = 0*mV # THREE PRE FOLLOWED BY ONE POST !
        # model.run(abs(i))
     #    model.REC.V_m[0] = 0*mV
