@@ -1,0 +1,273 @@
+from brian2 import *
+
+fiebig_namespace = {
+    't_sim': 0.1*ms,
+
+    'b': pA*50,#86,
+    'tau_Iw': 280*ms,
+    'C_m': 280*pF,
+    'E_L': -70*mV,
+    'g_L': 14*nS,
+    'delta_T': 3*mV,
+    'V_t': -55*mV,
+    'V_r': -80*mV,
+    
+    'tau_ref': 5*ms,
+
+    'U': 0.2,
+    'tau_rec': 280*ms,
+    'tau_fac': 5*second,
+
+    'tau_AMPA': 5*ms,
+    'tau_NMDA': 20*ms,
+    'tau_GABA': 5*ms,
+    'E_AMPA': 0*mV,
+    'E_NMDA': 0*mV,
+    'E_GABA': -75*mV,
+
+    # 'K_AMPA': 1,
+    'kappa': 1,
+
+    'b_recurrence': 1,
+    'gain_factor': 1,
+    'w_gain_AMPA': 0.05*0.78*3.93*nS, # 0.2
+    'w_gain_NMDA': 0.05*5*0.21*nS, # 0.2
+    'w_gain_GABA': 0.05*2.5*3.93*nS, # 0.2*2.5
+
+    'beta_gain': pA*40,  
+
+    'f_min': 0.5*Hz,
+    'f_max': 50*Hz,
+    'eps': 0.01,
+    't_spike': 0.1*ms,
+
+    'tau_z': 20*ms,
+    'tau_e': 100*ms,
+    'tau_p': 5*second,
+
+    't_delay': '1.5*ms + rand()*0.2*ms',
+    # 't_delay_basket': '3*ms + rand()*0.5*ms',
+    't_delay_long': '15*ms+rand()*10*ms',
+
+    'intra_hc_intra_mc': 3, # FIXED 
+    # 'intra_hc_inter_mc': 0, # this one won't matter if no connection between diff MCs in same HC
+    'inter_hc_coactive': 2.5,
+    'inter_hc_competing': -1.5,
+
+    'p_c_intra_mc': 0.25,
+    'p_c_inter_hc': 0.38,
+
+    'r_bg': 550*Hz,
+    'gr_bg': 1.5*nS,
+    'gr_bg_n': 1.5*nS,
+    'r_stim': 600*Hz,
+    'gr_stim': 1.5*nS,
+
+    'E_L_BA': -70*mV,
+    'cp_PB': 0.7,
+    'cp_BP': 0.7, 
+
+    'G_PB_factor': 1,
+    'G_PB': 0.15*3.5*nS, # 0.15
+    'G_BP_factor': 1,
+    'G_BP': 0.8*20*nS,
+
+    't_stim': 100*ms,
+    't_isi': 150*ms
+}
+
+fiebig_equations = {
+    # RECURRENT HYPER-MINI-COLUMN LAYER
+    'eqs_rec': '''
+    # VOLTAGE ----------------------------------------
+    dV_m/dt = (
+        - g_L*(V_m-E_L) 
+        + g_L*delta_T*exp((V_m-V_t)/delta_T)
+        - I_w
+        + I_beta
+        - I_syn
+        - I_stim
+        - I_noise
+    )/C_m : volt (unless refractory)
+    dI_w/dt = -I_w/tau_Iw : amp # adaptation current
+
+    # SYNAPTIC CURRENTS ------------------------------
+    g_AMPA : siemens # SUM OVER ALL FAST SYNAPSES
+    g_MC_AMPA : siemens # SUM OVER ALL INTER-MC SYNAPSES
+    I_AMPA = (g_AMPA + g_MC_AMPA) * (V_m - E_AMPA) : amp
+    # ------------------------------------------------
+    g_NMDA : siemens # SUM OVER ALL SLOW SYNAPSES
+    g_MC_NMDA : siemens # SUM OVER ALL INTER-MC SYNAPSES
+    I_NMDA = (g_NMDA + g_MC_NMDA) * (V_m - E_NMDA) : amp 
+    # ------------------------------------------------
+    g_GABA : siemens # SUM OVER ALL FAST SYNAPSES
+    g_BP : siemens # SUM OVER ALL BASKET-PYR SYNAPSES
+    I_GABA = (g_GABA + g_BP) * (V_m - E_GABA) : amp 
+    # ------------------------------------------------
+    I_syn = I_AMPA + I_NMDA + I_GABA : amp
+
+    # BETA CURRENT -----------------------------------
+    beta = log(P) : 1
+    I_beta = beta_gain * beta : amp
+
+    # EXTERNAL CURRENT -------------------------------
+    b_on : 1 # boolean gate of conductance based stimulation
+    dg_stim/dt = -g_stim/tau_AMPA : siemens
+    I_stim = (b_on + stim_ta(t,int(i//N_pyr))) * g_stim * (V_m-E_AMPA) : amp
+
+    # NOISE CURRENT ----------------------------------
+    dg_pos_noise/dt = -g_pos_noise/tau_AMPA : siemens
+    dg_neg_noise/dt = -g_neg_noise/tau_AMPA : siemens
+    I_noise = g_pos_noise*(V_m-E_AMPA) + g_neg_noise*(V_m-E_GABA) : amp
+
+    # SPIKE TRAIN ------------------------------------
+    dS/dt = -S/t_sim : 1
+
+    # NMDA TRACES ------------------------------------
+    dZ/dt = (S/(f_max*t_spike) - Z + eps)/tau_z : 1
+    # dE/dt = (Z-E)/tau_e : 1
+    dP/dt = kappa*(Z-P)/tau_p : 1
+    ''',
+
+    'reset_rec': '''
+    V_m = V_r
+    I_w += b
+    S = 1
+    ''',
+    'threshold_rec': 'V_m>V_t',
+    'refractory_rec': 'tau_ref',
+
+    # BCPNN SYNAPSES ---------------------------------
+    'full_syn_model': '''
+    # SYNAPTIC TRACES & WEIGHTS ----------------------
+    # dE_syn/dt = (Z_pre*Z_post-E_syn)/tau_e : 1 (clock-driven)
+    dP_syn/dt = kappa*(Z_pre*Z_post - P_syn)/tau_p : 1 (clock-driven)
+    w = log(P_syn/(P_pre*P_post)) : 1 (constant over dt)
+
+    # CONDUCTANCES -----------------------------------
+    b_glut = int(w > 0) : 1
+
+    # AMPA -------------------------------------------
+    w_AMPA = b_glut * gain_factor * w_gain_AMPA * w : siemens
+    dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    g_AMPA_post = b_recurrence * w_AMPA * H_AMPA * x : siemens (summed)
+
+    # NMDA -------------------------------------------
+    w_NMDA = b_glut * gain_factor * w_gain_NMDA * w : siemens
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_NMDA_post = b_recurrence * w_NMDA * H_NMDA * x : siemens (summed)
+
+    # GABA -------------------------------------------
+    w_GABA = (b_glut-1) * gain_factor * w_gain_GABA * w : siemens
+    dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
+    g_GABA_post = b_recurrence * w_GABA * H_GABA : siemens (summed)
+
+    # DEPRESSION -------------------------------------
+    dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # FACILITATION -----------------------------------
+    # du/dt = (U-u)/tau_fac : 1 (clock-driven)
+    ''',
+
+    'full_syn_on_pre': '''
+    H_AMPA = 1
+    H_NMDA = 1
+    H_GABA = 1
+    x -= U * x
+    ''',
+    # u -= U*(1-u)
+
+    # FAST SYNAPSE MODEL -----------------------------
+    # 'fast_syn_model': '''
+
+    # # SYNAPTIC TRACES & WEIGHTS ----------------------
+    # dE_syn/dt = (Z_fast_pre*Z_fast_post-E_syn)/tau_e : 1 (clock-driven)
+    # dP_syn/dt = K_AMPA*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    # w = log(P_syn/(P_fast_pre*P_fast_post)) : 1 (constant over dt)
+
+    # # CONDUCTANCES -----------------------------------
+    # b_glut = int(w > 0) : 1
+    # # AMPA -------------------------------------------
+    # w_AMPA = b_glut * w_gain_AMPA * w : siemens
+    # dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    # g_AMPA_post = w_AMPA * H_AMPA * x : siemens (summed)
+    # # GABA -------------------------------------------
+    # w_GABA = (b_glut-1) * w_gain_GABA * w : siemens
+    # dH_GABA/dt = -H_GABA/tau_GABA : 1 (clock-driven)
+    # g_GABA_post = w_GABA * H_GABA * x : siemens (summed)
+
+    # # DEPLETION --------------------------------------
+    # dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # ''',
+
+    # 'fast_syn_on_pre': '''
+    # H_AMPA = 1
+    # H_GABA = 1
+    # x -= U * x
+    # ''',
+
+    # # SLOW SYNAPSE MODEL -----------------------------
+    # 'slow_syn_model': '''
+
+    # # SYNAPTIC TRACES & WEIGHTS ----------------------
+    # dE_syn/dt = (Z_slow_pre*Z_slow_post-E_syn)/tau_e : 1 (clock-driven)
+    # dP_syn/dt = kappa*(E_syn - P_syn)/tau_p : 1 (clock-driven)
+    # w = log(P_syn/(P_slow_pre*P_slow_post)) : 1 (constant over dt)
+
+    # # CONDUCTANCES -----------------------------------
+    # b_glut = int(w > 0) : 1
+    # # NMDA -------------------------------------------
+    # w_NMDA = b_glut * w_gain_NMDA * w : siemens
+    # dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    # g_NMDA_post = w_NMDA * H_NMDA * x : siemens (summed)
+
+    # # DEPLETION --------------------------------------
+    # dx/dt = (1-x)/tau_rec : 1 (clock-driven)
+    # ''',
+
+    # 'slow_syn_on_pre': '''
+    # H_NMDA = 1
+    # x -= U * x
+    # ''',
+
+    # INTER-MINICOLUMN SYNAPSE MODEL 
+    'inter_mc_model': '''
+    # AMPA -------------------------------------------
+    dH_AMPA/dt = -H_AMPA/tau_AMPA : 1 (clock-driven)
+    g_MC_AMPA_post = gain_factor * w_gain_AMPA * intra_hc_intra_mc * H_AMPA : siemens (summed)
+    # NMDA -------------------------------------------
+    dH_NMDA/dt = -H_NMDA/tau_NMDA : 1 (clock-driven)
+    g_MC_NMDA_post = gain_factor * w_gain_NMDA * intra_hc_intra_mc * H_NMDA : siemens (summed)
+    ''',
+    'inter_mc_on_pre': '''
+    H_AMPA = 1
+    H_NMDA = 1
+    ''',
+
+    # BASKET CELL EQUATIONS
+    'eqs_basket': '''
+    dV_m/dt = (
+        - g_L*(V_m-E_L_BA) 
+        - I_syn
+    )/C_m : volt (unless refractory)
+    g_PB : siemens # SUMMED
+    I_syn = g_PB*(V_m-E_AMPA) : amp
+    ''',
+
+    'syn_PB': '''
+    dH_PB/dt = -H_PB/tau_AMPA : 1 (clock-driven)
+    g_PB_post = H_PB * G_PB_factor * G_PB : siemens (summed)
+    ''',
+    'syn_BP': '''
+    dH_BP/dt = -H_BP/tau_GABA : 1 (clock-driven)
+    g_BP_post = b_recurrence * H_BP * G_BP_factor * G_BP : siemens (summed)
+    ''',
+    'reset_ba': '''
+    V_m = V_r
+    ''',
+    'pyr_basket_on_pre': '''
+    H_PB = 1
+    ''',
+    'basket_pyr_on_pre': '''
+    H_BP = 1
+    '''
+    }

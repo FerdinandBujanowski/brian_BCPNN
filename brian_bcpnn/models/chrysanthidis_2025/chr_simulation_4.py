@@ -5,7 +5,7 @@ from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
 from brian_bcpnn.plot import trains, synapses, composite
-from brian_bcpnn.stim_protocols.train_protocol import train_n_epochs, get_total_time
+from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils
 
 N_hyper = 5
@@ -50,7 +50,7 @@ pattern = pattern_list.patterns[0]
 # turn on imperfect pattern
 model.turn_on_imperfect(pattern, noise_percentage=1, turn_on_other=True)
 
-stims, t_total = train_n_epochs(
+stims, t_total = cue_n_epochs(
     model, t_init, t_stim, t_isi, t_end,
     pattern_list,
     n_batches=N_batches

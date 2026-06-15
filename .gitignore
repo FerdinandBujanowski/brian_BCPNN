@@ -1,6 +1,7 @@
 hebbian/tully_2014/test.py
 
 **/__pycache__
+data/chr/stable_init_10_10_30.data
 *.csv
 
 **/output/**

@@ -5,9 +5,13 @@ from tqdm import tqdm
 
 sys.path.append("./")
 import brian_bcpnn.utils.synapse_utils as sils
-from brian_bcpnn.utils.stim_utils import StimTime, PatternList
+from brian_bcpnn.utils.stim_utils import StimTime, PatternList, Pattern
+import brian_bcpnn.utils.spike_utils as spils
 
-def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr=0, to=None):
+pattern_cmap = mpl.colormaps['viridis']
+# cmap((1+i)/(len(pt_dict)+1))
+
+def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr=0, to=None, model=None):
     max_N = N if to is None else to
     t_array, i_array = [], []
     for t, i in zip(spikemon.t, spikemon.i):
@@ -15,11 +19,14 @@ def get_full_train(ax, spikemon, N, t_total, x_label=None, c='k', t_div=1*ms, fr
             t_array.append(t)
             i_array.append(i)
     
+    # spikemon.t, spikemon.i
     ax.scatter(t_array/t_div, i_array, marker='_', color=c, s=10)
     ax.set_xlim(0, t_total/t_div)
-    ax.set_ylim(fr-0.5, max_N)
+    ax.set_ylim(fr, max_N)
     ax.set_ylabel('# neuron')
-    ax.set_yticks(np.arange(fr, max_N, max(10, int(max_N/5))))
+    neurons_per_hc = 180 if model == None else model.N_M * model.N_pyr
+    ax.set_yticks(list(range(fr, max_N, neurons_per_hc)))
+    ax.grid(axis='y')
     
     if x_label is not None:
         ax.set_xlabel(x_label)
@@ -51,40 +58,11 @@ def compare_two_trains(ax, spikemon, n_a, n_b, x_label=None, c_a='r', c_b='b', t
 
     return ax
 
-def get_neuron_frequency(spikemon:SpikeMonitor, neuron, t_stop, t_start=0*ms):
-    spike_trains = spikemon.spike_trains()
-    relevant_times = [t for t in spike_trains[neuron] if t >= t_start and t < t_stop]
-    return len(relevant_times) / (t_stop - t_start)
-
-# def get_event_frequency(eventmon, neuron, t_stop, t_start=0*ms):
-#     return len(eventmon.event_trains()[neuron]) / (t_stop - t_start)
-
 def get_spiking_histogram(ax, spikemon, N, t_stop, t_start=0*ms):
-    freqs = [get_neuron_frequency(spikemon, i, t_stop, t_start)/Hz for i in range(N)]
+    freqs = [spils.get_neuron_frequency(spikemon, i, t_stop, t_start)/Hz for i in range(N)]
     if ax is not None:
         ax.hist(freqs, bins=5)
     return freqs
-
-def sliding_window_freq(ax, spikemon, N, t_stop, t_start=0*ms, window_size=100*ms, step_size=50*ms, t_div=second):
-    total_window = t_stop - t_start
-    n_steps = int((total_window-window_size)/step_size+1)
-    freqs = np.zeros(shape=(n_steps, N))
-    x_time = []
-    for step in tqdm(range(n_steps)):
-        current_start = t_start + step*step_size
-        x_time.append(current_start)
-        current_stop = current_start + window_size
-        freqs[step,:] = get_spiking_histogram(ax=None, spikemon=spikemon, N=N, t_start=current_start, t_stop=current_stop)
-
-    freqs_mean = np.mean(freqs, axis=1)
-    # freqs_std = np.std(freqs, axis=1)
-    color = 'b'
-    ax.plot(x_time, freqs_mean, c=color, label='mean')
-    # n_std = 1.96
-    # ax.fill_between(x_time, freqs_mean-n_std*freqs_std, freqs_mean+n_std*freqs_std, alpha=0.3, color=color)
-    ax.set_xlabel(f'Time/{t_div}')
-    ax.set_ylabel('Firing Frequency')
-    ax.legend()
 
 def get_active_freqs_per_batch(
         ax,
@@ -103,8 +81,37 @@ def get_active_freqs_per_batch(
             # loop through all individual neurons of current minicolumn
             for current_pyr in range(N_pyr):
                 # add current neuron frequency to np array of freqs
-                pattern_freqs[n_batch, i_c*N_pyr+current_pyr] = get_neuron_frequency(
+                pattern_freqs[n_batch, i_c*N_pyr+current_pyr] = spils.get_neuron_frequency(
                     spikemon=spikemon, neuron=sils.get_first_pyr(coords.HC, coords.MC, N_M, N_pyr),
                     t_start=batch_time.t_start, t_stop=batch_time.t_end
                 )/Hz
     ax.boxplot(pattern_freqs.T)
+
+# TODO rework this to work with both distorted and partial cues
+def plot_all_minicolumn_activations(ax, model, spikemon, full_patterns:PatternList, stims, t_total, dt, t_div=second, show_cued=False):
+    # cmap = mpl.colormaps['viridis']
+    # cmap((1+i)/(len(pt_dict)+1))
+
+    # pattern_1_train = trains.get_pattern_population_train(spikemon, model, pattern_list.patterns[0], t_total, defaultclock.dt)
+    # pattern_1_freqs = trains.get_firing_rate_estimate(pattern_1_train, N_M*N_pyr, 0.1, t_total/ms, kernel_size=15)#
+    ax.set_ylabel('Firing Rate / Hz')
+
+    time_array = np.arange(0, t_total-dt, dt)/t_div
+    for i_h in range(model.N_H):
+        for i_m in range(model.N_M):
+            occ_patterns = []
+            ls = '-' if show_cued else ':'
+            c = 'r'
+            for i_pattern, pattern in enumerate(full_patterns.patterns):
+                for coords in pattern.coord_list:
+                    if i_h == coords.HC and i_m == coords.MC:
+                        occ_patterns.append(i_pattern)
+                        for stim in stims:
+                            if coords == stim.coords:
+                                ls = '-'
+            if len(occ_patterns) == 1:
+                c = pattern_cmap((1+i_pattern)/(len(full_patterns.patterns)+1))
+            if len(occ_patterns) > 0:
+                mc_train = spils.get_minicolumn_population_train(spikemon, model, i_h, i_m, t_total, dt)
+                fr_estimate = spils.get_firing_rate_estimate(mc_train, model.N_pyr, dt/ms, t_total/ms, kernel_size=20)
+                ax.plot(time_array, fr_estimate, color=c, alpha=0.5, ls=ls)
