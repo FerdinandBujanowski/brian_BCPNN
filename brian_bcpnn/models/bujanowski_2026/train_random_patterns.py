@@ -3,7 +3,7 @@
 from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
-from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_namespace, fiebig_equations
+from brian_bcpnn.models.parameters.fiebig_params import fiebig_namespace, fiebig_equations
 from brian_bcpnn.plot import trains, synapses, composite
 from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils

@@ -8,7 +8,7 @@ from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
 from brian_bcpnn.plot import trains, synapses
-from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_namespace, fiebig_equations
+from brian_bcpnn.models.parameters.fiebig_params import fiebig_namespace, fiebig_equations
 import brian_bcpnn.utils.stim_utils as stils
 
 N_H = 9
