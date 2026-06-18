@@ -11,7 +11,7 @@ from brian2 import *
 
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
-from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
+from brian_bcpnn.models.parameters.chr_params import chr_namespace
 from brian_bcpnn.stim_protocols.init_params import init_network_params
 
 N_H = 10

@@ -2,8 +2,6 @@
 # 
 
 from brian2 import *
-# import brian2cuda
-# set_device("cuda_standalone")
 
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork

@@ -4,7 +4,7 @@
 from brian2 import *
 sys.path.append("./")
 from brian_bcpnn.networks import ChrysanthidisNetwork
-from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace
+from brian_bcpnn.models.parameters.chr_params import chr_namespace
 from brian_bcpnn.plot import trains, synapses
 from brian_bcpnn.utils.stim_utils import add_time, StimProtocol, ColumnCoords
 import brian_bcpnn.utils.stim_utils as stils

@@ -6,7 +6,7 @@ import os
 
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
-from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_equations, fiebig_namespace
+from brian_bcpnn.models.parameters.fiebig_params import fiebig_equations, fiebig_namespace
 from brian_bcpnn.plot import trains, synapses, composite
 from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils
@@ -29,7 +29,7 @@ SERIES = 'A'
 BATCH = '30_1'
 
 fp = f'./data/random_patterns/weights_series_{SERIES}_{BATCH}.data'
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
+pattern_list = stils.patterns_from_txt(f'data/tests_{SERIES}/patterns_{SERIES}.txt')
 N_patterns = len(pattern_list.patterns)
 
 t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
@@ -37,7 +37,7 @@ t_total = get_total_time(t_start, t_stim, t_isi, t_end, N_batches, N_patterns)
 # calculate overlaps BEFORE DISTORTION
 pattern_overlaps = stils.get_pattern_overlap_counts(pattern_list)
 
-output_path=f'20_random_patterns/tests_{SERIES}/stats_{BATCH}.csv'
+output_path=f'data/tests_{SERIES}/stats_{BATCH}.csv'
 
 N_dist = 3
 

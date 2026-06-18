@@ -44,7 +44,7 @@ t_init, t_end = 100*ms, 0*ms
 
 # calculating eps from total number of timesteps
 # pattern_list = stils.get_random_patterns(model.N_H, model.N_M, N_P)
-pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_{SERIES}/patterns_{SERIES}.txt')
+pattern_list = stils.patterns_from_txt(f'data/tests_{SERIES}/patterns_{SERIES}.txt')
 print(",".join([str(p) for p in pattern_list.patterns]))
 
 column_list = []

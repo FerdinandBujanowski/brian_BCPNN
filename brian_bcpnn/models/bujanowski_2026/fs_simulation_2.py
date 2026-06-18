@@ -7,7 +7,7 @@ import numpy as np
 
 sys.path.append("./")
 from brian_bcpnn.networks import TwoSynTypeNetwork
-from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_namespace, fiebig_equations
+from brian_bcpnn.models.parameters.fiebig_params import fiebig_namespace, fiebig_equations
 from brian_bcpnn.plot import trains, synapses, composite
 from brian_bcpnn.stim_protocols.train_protocol import cue_n_epochs, get_total_time
 import brian_bcpnn.utils.stim_utils as stils
@@ -100,29 +100,6 @@ pt_dict = stils.get_pattern_time_dict(pattern_list, stims)
 
 # DATA_PATH = './data/orthogonal/all_monitors/'
 model.save_traces(f'./data/orthogonal/trained_{N_H}_{N_M}_{N_pyr}.data')
-
-# SAVE ALL MONITORS
-# spikemon
-# spikemon_data = spikemon.get_states(['t', 'i'], units=False, format='pandas')
-# spikemon_data.to_csv(f'{DATA_PATH}spikemon.csv', index=False)
-
-# # basmon
-# basmon_data = basmon.get_states(['t', 'i'], units=False, format='pandas')
-# basmon_data.to_csv(f'{DATA_PATH}basmon.csv', index=False)
-
-# synmon_mc_1
-# np.savetxt(f'{DATA_PATH}synmon_mc_1.txt', synmon_mc_1.w)
-
-# # synmon_mc_2
-# np.savetxt(f'{DATA_PATH}synmon_mc_2.txt', synmon_mc_2.w)
-
-# # tracemon
-# np.savetxt(f'{DATA_PATH}tracemon.txt', tracemon.get_states(model.REC_TRACES, units=False))
-
-# # syn_tracemon_s1
-# np.savetxt(f'{DATA_PATH}syn_tracemon_s1.txt', syn_tracemon_s1.get_states(model.S_REC_TRACES+['w'], units=False))
-# # syn_tracemon_s2
-# np.savetxt(f'{DATA_PATH}syn_tracemon_s2.txt', syn_tracemon_s2.get_states(model.S_REC_TRACES+['w'], units=False))
 
 # PLOTS
 

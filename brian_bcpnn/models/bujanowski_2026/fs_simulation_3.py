@@ -41,7 +41,7 @@ t_end = 100 * ms
 N_batches = 1
 
 pattern_list = stils.get_orthogonal_patterns(model.N_H, model.N_M)
-# pattern_list = stils.patterns_from_txt(f'20_random_patterns/tests_A/patterns_A.txt')
+# pattern_list = stils.patterns_from_txt(f'data/tests_A/patterns_A.txt')
 pattern_list = stils.PatternList(pattern_list.patterns[0:1])
 # pattern_list = stils.get_incomplete_patterns(pattern_list, 6)
 # pattern_list = stils.distort_patterns(pattern_list, model.N_M, 3)
