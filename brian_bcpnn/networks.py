@@ -4,9 +4,9 @@ import time as tm
 from scipy.optimize import curve_fit
 import scipy.stats as stats
 sys.path.append("./")
-from brian_bcpnn.models.chrysanthidis_2025.chr_params import chr_namespace, chr_equations
-from brian_bcpnn.models.bujanowski_2026.fiebig_params import fiebig_equations, fiebig_namespace
-from brian_bcpnn.models.tully_2014.tully_params import tully_namespace, tully_equations
+from brian_bcpnn.models.parameters.chr_params import chr_namespace, chr_equations
+from brian_bcpnn.models.parameters.fiebig_params import fiebig_equations, fiebig_namespace
+from brian_bcpnn.models.parameters.tully_params import tully_namespace, tully_equations
 
 import brian_bcpnn.utils.synapse_utils as syls
 # from brian_bcpnn.plot.synapses import plot_connectivity
